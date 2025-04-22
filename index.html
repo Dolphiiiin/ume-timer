@@ -4,465 +4,434 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>イベントタイムキーパー</title>
-    <style>
-        :root {
-    --bg-color: #121212;
-    --primary-color: #ffffff;
-    --secondary-color: #11ffdf;
-    --text-color: #e0e0e0;
-    --error-color: #cf6679;
-    --panel-color: #1e1e1e;
-    --border-color: #333333;
-}
+    <style>        :root {
+            --bg-color: #121212;
+            --primary-color: #ffffff;
+            --secondary-color: #11ffdf;
+            --text-color: #e0e0e0;
+            --error-color: #cf6679;
+            --panel-color: #1e1e1e;
+            --border-color: #333333;
+        }
 
-body {
-    font-family: 'Roboto', 'Noto Sans JP', sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-}
+        body {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header-container {
+            background-color: var(--panel-color);
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+            flex-shrink: 0;
+        }
+        
+        .editable-header {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: none;
+            font-size: clamp(1rem, 5vw, 2rem);
+            font-weight: bold;
+            width: 100%;
+            padding: 5px;
+            text-align: center;
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+        }
+        
+        .editable-header:focus {
+            outline: none;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* 時計表示部分 */
+        .time-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--panel-color);
+            border-radius: 0;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            flex: 7;
+            overflow: hidden;
+        }
+        
+        .current-time {
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: bold;
+            margin: 10px 0;
+            color: var(--text-color);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .seconds {
+            font-size: 0.5em;
+            display: inline-block;
+            transform: translateY(8%);
+        }
+        
+        .countdown {
+            font-size: clamp(2rem, 8vw, 6rem);
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 10px 0;
+            padding-left: 50px;
+            position: relative;
+            display: inline-block;
+        }
 
-.container {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
+        .target-time {
+            font-size: clamp(1rem, 4vw, 2.5rem);
+            color: var(--text-color);
+            opacity: 0.8;
+            margin: 5px 0;
+        }
 
-.header-container {
-    background-color: var(--panel-color);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border-color);
-    width: 100%;
-    flex-shrink: 0;
-}
+        .countdown.warning {
+            color: #ffab40;
+        }        .countdown.danger {
+            color: var(--error-color);
+        }
+        
+        .elapsed {
+            color: #ededed;
+            opacity: 0.6;
+        }/* サイドバー設定部分 */
+        .settings-panel {
+            background-color: var(--panel-color);
+            border-radius: 0;
+            padding: 10px;
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.3);
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            transition: flex 0.3s ease;
+            position: relative;
+            overflow-y: auto;
+        }
+        
+        .settings-panel.collapsed {
+            flex: 0.5;
+        }
+        
+        .settings-panel.collapsed .time-settings,
+        .settings-panel.collapsed .status,
+        .settings-panel.collapsed .button-group {
+            display: none;
+        }
+        
+        .toggle-settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            padding: 0;
+        }
 
-.editable-header {
-    background-color: transparent;
-    color: var(--primary-color);
-    border: none;
-    font-size: clamp(1.2rem, 5vw, 2.2rem);
-    font-weight: bold;
-    width: 100%;
-    padding: 5px;
-    text-align: center;
-    font-family: 'Roboto', 'Noto Sans JP', sans-serif;
-}
+        .settings-title {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-align: center;
+        }
 
-.editable-header:focus {
-    outline: none;
-    border-bottom: 2px solid var(--secondary-color);
-}
+        .time-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
 
-.main-container {
-    display: flex;
-    flex-direction: row;
-    flex: 1;
-    width: 100%;
-    overflow: hidden;
-}
+        .setting-group {
+            width: 100%;
+        }
 
-/* 時計表示部分 */
-.time-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: var(--panel-color);
-    border-radius: 0;
-    padding: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    flex: 7;
-    overflow: hidden;
-}
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }        
+        input[type="time"], input[type="text"].event-title-input {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+        }
 
-.current-time {
-    font-size: clamp(3.5rem, 12vw, 9rem);
-    font-weight: bold;
-    margin: 10px 0;
-    color: var(--text-color);
-    position: relative;
-    display: inline-block;
-}
+        button {
+            background-color: var(--primary-color);
+            color: #121212;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            margin-bottom: 8px;
+            width: 100%;
+        }
 
-.seconds {
-    font-size: 0.5em;
-    display: inline-block;
-    transform: translateY(8%);
-}
+        button:hover {
+            background-color: #a174da;
+        }
 
-/* 時間表示を横並びに */
-.time-row {
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-    align-items: center;
-    margin: 5px 0;
-    padding: 0 10px;
-    gap: 20px;
-}
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+            margin-bottom: 5px;
+        }
 
-.time-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-}
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-style: italic;
+            padding: 8px;
+            background-color: var(--bg-color);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
 
-.target-time {
-    font-size: clamp(1.5rem, 5vw, 3rem);
-    color: var(--text-color);
-    opacity: 0.8;
-    text-align: center;
-}
+        hr {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            margin: 10px 0;
+        }
+        
+        /* レスポンシブデザインの改善 */
+        @media (max-width: 1024px) {
+            .current-time {
+                font-size: clamp(2rem, 14vw, 5rem);
+            }
+            
+            .countdown {
+                font-size: clamp(2rem, 14vw, 5rem);
+            }
+            
+            .target-time {
+                font-size: clamp(1rem, 7vw, 2rem);
+            }
+        }
 
-.countdown {
-    font-size: clamp(3.5rem, 11vw, 9rem);
-    font-weight: bold;
-    color: var(--secondary-color);
-    margin: 10px 0;
-    position: relative;
-    display: inline-block;
-}
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .time-display, .settings-panel {
+                width: 100%;
+            }
+            
+            .time-display {
+                flex: 2;
+                padding: 8px;
+            }
+            
+            .settings-panel {
+                flex: 1;
+                min-height: auto;
+                height: auto;
+            }
+            
+            .current-time {
+                font-size: clamp(1.8rem, 12vw, 4rem);
+                margin: 5px 0;
+            }
+            
+            .countdown {
+                font-size: clamp(1.8rem, 12vw, 4rem);
+                margin: 5px 0;
+            }
+            
+            .target-time {
+                font-size: clamp(0.9rem, 6vw, 1.8rem);
+                margin: 3px 0;
+            }
+            
+            hr {
+                margin: 5px 0;
+            }
+        }
 
-.countdown.warning {
-    color: #ffab40;
-}
+        @media (max-width: 480px) {
+            .header-container {
+                padding: 5px;
+            }
+            
+            .editable-header {
+                font-size: 1.2rem;
+                padding: 3px;
+            }
+            
+            .current-time {
+                font-size: clamp(1.5rem, 10vw, 3rem);
+                margin: 3px 0;
+            }
+            
+            .countdown {
+                font-size: clamp(1.5rem, 10vw, 3rem);
+                margin: 3px 0;
+            }
+            
+            .target-time {
+                font-size: clamp(0.8rem, 5vw, 1.5rem);
+                margin: 2px 0;
+            }
+            
+            .settings-panel {
+                padding: 8px;
+            }
+            
+            .settings-title {
+                margin-bottom: 5px;
+            }
+            
+            label {
+                margin-bottom: 3px;
+            }
+            
+            .status {
+                padding: 5px;
+                margin: 5px 0;
+                font-size: 0.8rem;
+            }
+            
+            button {
+                padding: 8px;
+                margin-bottom: 5px;
+            }
+            
+            .button-group {
+                gap: 5px;
+            }
+        }
+        
+        /* 特に小さい画面やランドスケープモードに対応 */
+        @media (max-height: 500px) {
+            .current-time, .countdown {
+                font-size: clamp(1.2rem, 8vw, 2.5rem);
+                margin: 2px 0;
+            }
+            
+            .target-time {
+                font-size: clamp(0.7rem, 4vw, 1.2rem);
+                margin: 1px 0;
+            }
+            
+            hr {
+                margin: 3px 0;
+            }
+            
+            .time-display {
+                padding: 5px;
+            }
+        }
+        
+        /* タブレットのランドスケープモード用 */
+        @media (min-width: 768px) and (max-height: 768px) {
+            .current-time, .countdown {
+                font-size: clamp(1.5rem, 10vw, 3.5rem);
+            }
+            
+            .target-time {
+                font-size: clamp(0.9rem, 5vw, 1.8rem);
+            }
+        }
 
-.countdown.danger {
-    color: var(--error-color);
-}
-
-.elapsed {
-    color: #ededed;
-    opacity: 0.6;
-}
-
-/* サイドバー設定部分 */
-.settings-panel {
-    background-color: var(--panel-color);
-    border-radius: 0;
-    padding: 10px;
-    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.3);
-    flex: 3;
-    display: flex;
-    flex-direction: column;
-    transition: flex 0.3s ease;
-    position: relative;
-    overflow-y: auto;
-}
-
-.settings-panel.collapsed {
-    flex: 0.5;
-}
-
-.settings-panel.collapsed .time-settings,
-.settings-panel.collapsed .status,
-.settings-panel.collapsed .button-group {
-    display: none;
-}
-
-.toggle-settings {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.5rem;
-    cursor: pointer;
-    width: auto;
-    margin: 0;
-    padding: 0;
-}
-
-.settings-title {
-    font-size: clamp(1.2rem, 3.5vw, 1.8rem);
-    color: var(--primary-color);
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.time-settings {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.setting-group {
-    width: 100%;
-}
-
-label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--primary-color);
-    font-size: 1.1rem;
-}
-
-input[type="time"], input[type="text"].event-title-input {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    border-radius: 5px;
-    width: 100%;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-}
-
-input[type="time"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.8);
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 5px;
-}
-
-button {
-    background-color: var(--primary-color);
-    color: #121212;
-    border: none;
-    padding: 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-    margin-bottom: 8px;
-    width: 100%;
-}
-
-button:hover {
-    background-color: #a174da;
-}
-
-.button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: auto;
-    margin-bottom: 5px;
-}
-
-.status {
-    text-align: center;
-    margin: 10px 0;
-    font-style: italic;
-    padding: 10px;
-    background-color: var(--bg-color);
-    border-radius: 5px;
-    font-size: 1rem;
-}
-
-hr {
-    width: 100%;
-    border: 1px solid var(--border-color);
-    margin: 15px 0;
-}
-
-/* レスポンシブデザインの改善 */
-@media (max-width: 1200px) {
-    .current-time {
-        font-size: clamp(3rem, 10vw, 8rem);
-    }
-    
-    .countdown {
-        font-size: clamp(3rem, 10vw, 8rem);
-    }
-    
-    .target-time {
-        font-size: clamp(1.3rem, 4vw, 2.7rem);
-    }
-}
-
-@media (max-width: 768px) {
-    .main-container {
-        flex-direction: column;
-    }
-    
-    .time-display, .settings-panel {
-        width: 100%;
-    }
-    
-    .time-display {
-        flex: 2;
-        padding: 8px;
-    }
-    
-    .settings-panel {
-        flex: 1;
-        min-height: auto;
-        height: auto;
-    }
-    
-    .current-time {
-        font-size: clamp(2.5rem, 8vw, 6rem);
-        margin: 5px 0;
-    }
-    
-    .countdown {
-        font-size: clamp(2.5rem, 8vw, 6rem);
-        margin: 5px 0;
-    }
-    
-    .target-time {
-        font-size: clamp(1.2rem, 3.5vw, 2.2rem);
-        margin: 3px 0;
-    }
-    
-    hr {
-        margin: 8px 0;
-    }
-    
-    .time-row {
-        flex-direction: column;
-    }
-    
-    .time-block {
-        margin: 5px 0;
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .header-container {
-        padding: 5px;
-    }
-    
-    .editable-header {
-        font-size: 1.3rem;
-        padding: 3px;
-    }
-    
-    .current-time {
-        font-size: clamp(2rem, 7vw, 4.5rem);
-        margin: 5px 0;
-    }
-    
-    .countdown {
-        font-size: clamp(2rem, 7vw, 4.5rem);
-        margin: 5px 0;
-    }
-    
-    .target-time {
-        font-size: clamp(1rem, 3vw, 1.8rem);
-        margin: 3px 0;
-    }
-    
-    .settings-panel {
-        padding: 8px;
-    }
-    
-    .settings-title {
-        margin-bottom: 5px;
-    }
-    
-    label {
-        margin-bottom: 3px;
-    }
-    
-    .status {
-        padding: 5px;
-        margin: 5px 0;
-        font-size: 0.9rem;
-    }
-    
-    button {
-        padding: 10px;
-        margin-bottom: 5px;
-    }
-    
-    .button-group {
-        gap: 5px;
-    }
-}
-
-/* 特に小さい画面やランドスケープモードに対応 */
-@media (max-height: 500px) {
-    .current-time, .countdown {
-        font-size: clamp(1.8rem, 5.5vw, 3.5rem);
-        margin: 2px 0;
-    }
-    
-    .target-time {
-        font-size: clamp(0.9rem, 2.5vw, 1.5rem);
-        margin: 1px 0;
-    }
-    
-    hr {
-        margin: 5px 0;
-    }
-    
-    .time-display {
-        padding: 5px;
-    }
-}
-
-/* タブレットのランドスケープモード用 */
-@media (min-width: 768px) and (max-height: 768px) {
-    .current-time, .countdown {
-        font-size: clamp(2.2rem, 6vw, 5rem);
-    }
-    
-    .target-time {
-        font-size: clamp(1.1rem, 3vw, 2.2rem);
-    }
-}
+        .countdown-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
-<body>
-    <div class="container">
+<body>    <div class="container">
         <div class="header-container">
-            <input type="text" class="editable-header" id="headerText" placeholder="イベント名を入力してください" value="イベントタイムキーパー">
+            
         </div>
         <div class="main-container">
             <div class="time-display">
+                <input type="text" class="editable-header" id="headerText" placeholder="イベント名を入力してください" value="イベントタイムキーパー">
                 <div class="current-time" id="currentTime">--:--:--</div>
                 <hr>
+                <div class="countdown-area">
+                    <div class="target-time" id="startTargetTime">--:--:--</div>
+                    <div class="countdown" id="startCountdown">--:--:--</div>
+                </div>
                 
-                <div class="time-row">
-                    <div class="time-block">
-                        <div class="target-time" id="startTargetTime">--:--:-- に開演まであと</div>
-                        <div class="countdown" id="startCountdown">--:--:--</div>
-                    </div>
-                    <div class="time-block">
-                        <div class="target-time" id="endTargetTime">--:--:-- に終演まであと</div>
-                        <div class="countdown" id="countdown">--:--:--</div>
-                    </div>
+            <hr>
+            <div class="countdown-area">
+                <div class="target-time" id="endTargetTime">--:--:--</div>
+                <div class="countdown" id="countdown">--:--:--</div>
+                </div>
+        
+            </div>        <div class="settings-panel" id="settingsPanel">
+            <button class="toggle-settings" id="toggleSettings">≫</button>
+            <div class="settings-title">時間設定</div>            <div class="time-settings">
+                <div class="setting-group">
+                    <label for="eventTitle">イベントタイトル</label>
+                    <input type="text" id="eventTitle" class="event-title-input" placeholder="イベント名を入力してください">
+                </div>
+                <div class="setting-group">
+                    <label for="startTime">開演時間</label>
+                    <input type="time" id="startTime" name="startTime">
+                </div>
+                <div class="setting-group">
+                    <label for="endTime">終演時間</label>
+                    <input type="time" id="endTime" name="endTime">
                 </div>
             </div>
-            
-            <div class="settings-panel" id="settingsPanel">
-                <button class="toggle-settings" id="toggleSettings">≫</button>
-                <div class="settings-title">時間設定</div>
-                <div class="time-settings">
-                    <div class="setting-group">
-                        <label for="eventTitle">イベントタイトル</label>
-                        <input type="text" id="eventTitle" class="event-title-input" placeholder="イベント名を入力してください">
-                    </div>
-                    <div class="setting-group">
-                        <label for="startTime">開演時間</label>
-                        <input type="time" id="startTime" name="startTime">
-                    </div>
-                    <div class="setting-group">
-                        <label for="endTime">終演時間</label>
-                        <input type="time" id="endTime" name="endTime">
-                    </div>
-                </div>
-                <div class="status" id="status">開演・終演時間を設定してください</div>
-                <div class="button-group">
-                    <button id="setTimesBtn">時間を設定</button>
-                    <button id="resetBtn">リセット</button>
-                </div>
+            <div class="status" id="status">開演・終演時間を設定してください</div>
+            <div class="button-group">
+                <button id="setTimesBtn">時間を設定</button>
+                <button id="resetBtn">リセット</button>
             </div>
         </div>
     </div>
@@ -485,9 +454,7 @@ hr {
         const resetBtn = document.getElementById('resetBtn');
         const statusElem = document.getElementById('status');
         const startTargetTimeElem = document.getElementById('startTargetTime');
-        const endTargetTimeElem = document.getElementById('endTargetTime');
-        
-        // 現在時刻を表示する関数
+        const endTargetTimeElem = document.getElementById('endTargetTime');        // 現在時刻を表示する関数
         function updateCurrentTime() {
             const now = new Date();
             currentTimeElem.innerHTML = formatTime(now, true);
@@ -497,15 +464,13 @@ hr {
                 startTargetTimeElem.textContent = formatTime(startTime, false) + " に開演まであと";
                 endTargetTimeElem.textContent = formatTime(endTime, false) + " に終演まであと";
             }
-            
-            // 開演までのカウントダウンを表示（開演後は0でストップ）
+              // 開演までのカウントダウンを表示（開演後は0でストップ）
             if (startTime) {
                 const timeToStart = startTime - now;
                 const isPast = timeToStart < 0;
-                
-                if (isPast) {
+                  if (isPast) {
                     // 開演後は 00:00:00 を表示
-                    startCountdownElem.innerHTML = "00:00:00";
+                    startCountdownElem.innerHTML = '00:00<span class="seconds">:00</span>';
                     startCountdownElem.classList.remove('warning', 'danger');
                     startCountdownElem.classList.add('elapsed'); // グレーアウト
                 } else {
@@ -522,8 +487,7 @@ hr {
                     }
                 }
             }
-            
-            // イベントが設定されている場合の自動スタート
+              // イベントが設定されている場合の自動スタート
             if (startTime && !countdownInterval) {
                 // 終演までのカウントダウンを常に開始
                 startCountdown();
@@ -541,8 +505,7 @@ hr {
             if (countdownInterval) {
                 clearInterval(countdownInterval);
             }
-            
-            countdownInterval = setInterval(() => {
+              countdownInterval = setInterval(() => {
                 const now = new Date();
                 const remainingTime = endTime - now;
                 const isPast = remainingTime < 0;
@@ -566,9 +529,7 @@ hr {
                     countdownElem.classList.remove('warning', 'danger');
                 }
             }, 1000);
-        }
-        
-        // 時間を表示用にフォーマットする関数
+        }        // 時間を表示用にフォーマットする関数
         function formatTime(date, includeSeconds = false) {
             const hours = padZero(date.getHours());
             const minutes = padZero(date.getMinutes());
@@ -661,15 +622,12 @@ hr {
         // Date オブジェクトを input[type="time"] 用にフォーマットする関数
         function formatTimeForInput(date) {
             return `${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
-        }
-        
-        // 初期化関数
+        }        // 初期化関数
         function initialize() {
             // 1秒ごとに現在時刻を更新
             setInterval(updateCurrentTime, 1000);
             updateCurrentTime();
-            
-            // ヘッダーテキストの初期化と保存機能
+              // ヘッダーテキストの初期化と保存機能
             const headerText = document.getElementById('headerText');
             const eventTitleInput = document.getElementById('eventTitle');
             const savedHeader = localStorage.getItem('headerText');
@@ -760,11 +718,9 @@ hr {
                 }
                 
                 // 現在時刻との比較
-                const now = new Date();
-                
-                if (now >= endTime) {
+                const now = new Date();                if (now >= endTime) {
                     statusElem.textContent = "設定した終演時間は過ぎています";
-                    countdownElem.innerHTML = "00:00:00";
+                    countdownElem.innerHTML = '00:00<span class="seconds">:00</span>';
                     countdownElem.classList.add('danger');
                 } else if (now >= startTime) {
                     statusElem.textContent = "イベント進行中";
@@ -790,8 +746,7 @@ hr {
                     
                     // クッキーを削除
                     document.cookie = 'timeSettings=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-                    
-                    // 表示をリセット
+                      // 表示をリセット
                     startCountdownElem.innerHTML = "--:--:--";
                     countdownElem.innerHTML = "--:--:--";
                     startTargetTimeElem.textContent = "--:--:--";
