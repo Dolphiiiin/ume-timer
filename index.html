@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>イベントタイムキーパー</title>
+    <style>        :root {
+            --bg-color: #121212;
+            --primary-color: #ffffff;
+            --secondary-color: #11ffdf;
+            --text-color: #e0e0e0;
+            --error-color: #cf6679;
+            --panel-color: #1e1e1e;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }        .container {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header-container {
+            background-color: var(--panel-color);
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            width: 100%;
+        }
+        
+        .editable-header {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: none;
+            font-size: 2rem;
+            font-weight: bold;
+            width: 100%;
+            padding: 5px;
+            text-align: center;
+            font-family: 'Roboto', 'Noto Sans JP', sans-serif;
+        }
+        
+        .editable-header:focus {
+            outline: none;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            flex: 1;
+            width: 100%;
+        }
+          /* 時計表示部分 */
+        .time-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+            background-color: var(--panel-color);
+            border-radius: 0;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            flex: 7;
+            height: 100%;
+            overflow-y: auto;
+            max-height: calc(100vh - 80px); /* ヘッダー部分を考慮した高さ */
+        }        
+        
+        .current-time {
+            font-size: min(8rem, 12vw);
+            font-weight: bold;
+            margin-bottom: 2vh;
+            color: var(--text-color);
+            position: relative;
+            display: inline-block;
+        }
+          
+        .seconds {
+            font-size: 0.5em;
+            display: inline-block;
+            transform: translateY(8%);
+        }
+        
+        .countdown {
+            font-size: min(8rem, 14vw);
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-bottom: 1vh;
+            position: relative;
+            display: inline-block;
+        }
+
+        .target-time {
+            font-size: min(3rem, 7vw);
+            color: var(--text-color);
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+
+        .countdown.warning {
+            color: #ffab40;
+        }        .countdown.danger {
+            color: var(--error-color);
+        }
+        
+        .elapsed {
+            color: #ededed;
+            opacity: 0.6;
+        }/* サイドバー設定部分 */
+        .settings-panel {
+            background-color: var(--panel-color);
+            border-radius: 0;
+            padding: 20px;
+            box-shadow: -4px 0 8px rgba(0, 0, 0, 0.3);
+            flex: 3;
+            height: 100vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transition: flex 0.3s ease;
+            position: relative;
+        }
+        
+        .settings-panel.collapsed {
+            flex: 0.5;
+        }
+        
+        .settings-panel.collapsed .time-settings,
+        .settings-panel.collapsed .status,
+        .settings-panel.collapsed .button-group {
+            display: none;
+        }
+        
+        .toggle-settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        .settings-title {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .time-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-group {
+            width: 100%;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }        
+        input[type="time"], input[type="text"].event-title-input {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #121212;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #a174da;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: auto;
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 15px;
+            font-style: italic;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        /* 横向きタブレット対応 */
+        @media (max-width: 1024px) {
+            .current-time {
+                font-size: min(6rem, 10vw);
+            }
+            
+            .countdown {
+                font-size: min(5rem, 12vw);
+            }
+            
+            .countdown-label {
+                font-size: 1.5rem;
+            }
+            
+            .target-time {
+                font-size: min(2.5rem, 6vw);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .time-display, .settings-panel {
+                flex: none;
+                height: auto;
+                width: 100%;
+            }
+            
+            .time-display {
+                height: 70vh;
+                overflow-y: auto;
+            }
+            
+            .settings-panel {
+                height: 30vh;
+                overflow-y: auto;
+            }
+            
+            .current-time {
+                font-size: min(4.5rem, 9vw);
+            }
+            
+            .countdown {
+                font-size: min(5rem, 10vw);
+            }
+            
+            .target-time {
+                font-size: min(2rem, 5vw);
+            }
+        }
+        
+        /* スマホ対応の追加 */
+        @media (max-width: 480px) {
+            .current-time {
+                font-size: min(3.5rem, 8vw);
+            }
+            
+            .countdown {
+                font-size: min(4rem, 9vw);
+            }
+            
+            .target-time {
+                font-size: min(1.8rem, 4.5vw);
+            }
+            
+            .settings-panel {
+                padding: 10px;
+            }
+        }
+        
+        hr {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>    <div class="container">
+        <div class="header-container">
+            
+        </div>
+        <div class="main-container">
+            <div class="time-display">
+                <input type="text" class="editable-header" id="headerText" placeholder="イベント名を入力してください" value="イベントタイムキーパー">
+                <div class="current-time" id="currentTime">--:--:--</div>
+                <hr>
+                <div class="target-time" id="startTargetTime">--:--:--</div>
+                <div class="countdown" id="startCountdown">--:--:--</div>
+            <hr>
+                <div class="target-time" id="endTargetTime">--:--:--</div>
+                <div class="countdown" id="countdown">--:--:--</div>
+        
+            </div>        <div class="settings-panel" id="settingsPanel">
+            <button class="toggle-settings" id="toggleSettings">≫</button>
+            <div class="settings-title">時間設定</div>            <div class="time-settings">
+                <div class="setting-group">
+                    <label for="eventTitle">イベントタイトル</label>
+                    <input type="text" id="eventTitle" class="event-title-input" placeholder="イベント名を入力してください">
+                </div>
+                <div class="setting-group">
+                    <label for="startTime">開演時間</label>
+                    <input type="time" id="startTime" name="startTime">
+                </div>
+                <div class="setting-group">
+                    <label for="endTime">終演時間</label>
+                    <input type="time" id="endTime" name="endTime">
+                </div>
+            </div>
+            <div class="status" id="status">開演・終演時間を設定してください</div>
+            <div class="button-group">
+                <button id="setTimesBtn">時間を設定</button>
+                <button id="resetBtn">リセット</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // グローバル変数
+        let startTime = null;
+        let endTime = null;
+        let countdownInterval = null;
+        const warningThreshold = 5 * 60 * 1000; // 5分
+        const dangerThreshold = 2 * 60 * 1000; // 2分
+
+        // DOM要素
+        const currentTimeElem = document.getElementById('currentTime');
+        const countdownElem = document.getElementById('countdown');
+        const startCountdownElem = document.getElementById('startCountdown');
+        const startTimeInput = document.getElementById('startTime');
+        const endTimeInput = document.getElementById('endTime');
+        const setTimesBtn = document.getElementById('setTimesBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusElem = document.getElementById('status');
+        const startTargetTimeElem = document.getElementById('startTargetTime');
+        const endTargetTimeElem = document.getElementById('endTargetTime');        // 現在時刻を表示する関数
+        function updateCurrentTime() {
+            const now = new Date();
+            currentTimeElem.innerHTML = formatTime(now, true);
+            
+            // ターゲット時間の表示を更新
+            if (startTime) {
+                startTargetTimeElem.textContent = formatTime(startTime, false) + " に開演まであと";
+                endTargetTimeElem.textContent = formatTime(endTime, false) + " に終演まであと";
+            }
+              // 開演までのカウントダウンを表示（開演後は0でストップ）
+            if (startTime) {
+                const timeToStart = startTime - now;
+                const isPast = timeToStart < 0;
+                  if (isPast) {
+                    // 開演後は 00:00:00 を表示
+                    startCountdownElem.innerHTML = "00:00:00";
+                    startCountdownElem.classList.remove('warning', 'danger');
+                    startCountdownElem.classList.add('elapsed'); // グレーアウト
+                } else {
+                    // 開演前はカウントダウン表示
+                    startCountdownElem.innerHTML = formatMilliseconds(timeToStart);
+                    
+                    // 警告色の適用
+                    startCountdownElem.classList.remove('warning', 'danger', 'elapsed');
+                    if (timeToStart <= 60000) { // 1分前
+                        startCountdownElem.classList.add('warning');
+                    }
+                    if (timeToStart <= 10000) { // 10秒前
+                        startCountdownElem.classList.add('danger');
+                    }
+                }
+            }
+              // イベントが設定されている場合の自動スタート
+            if (startTime && !countdownInterval) {
+                // 終演までのカウントダウンを常に開始
+                startCountdown();
+                
+                if (now >= startTime && now < endTime) {
+                    statusElem.textContent = "イベント進行中";
+                } else if (now < startTime) {
+                    statusElem.textContent = `開演まであと${formatTimeDifference(now, startTime)}`;
+                }
+            }
+        }
+
+        // カウントダウンを開始する関数
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+              countdownInterval = setInterval(() => {
+                const now = new Date();
+                const remainingTime = endTime - now;
+                const isPast = remainingTime < 0;
+                
+                // マイナスカウントも表示
+                countdownElem.innerHTML = (isPast ? "-" : "") + formatMilliseconds(Math.abs(remainingTime));
+                
+                // 残り時間に応じてカラーを変更
+                if (isPast) {
+                    // 終演時間を過ぎた場合は赤色
+                    countdownElem.classList.remove('warning');
+                    countdownElem.classList.add('danger');
+                    statusElem.textContent = "イベント終了時間を過ぎています";
+                } else if (remainingTime <= dangerThreshold) {
+                    countdownElem.classList.remove('warning');
+                    countdownElem.classList.add('danger');
+                } else if (remainingTime <= warningThreshold) {
+                    countdownElem.classList.remove('danger');
+                    countdownElem.classList.add('warning');
+                } else {
+                    countdownElem.classList.remove('warning', 'danger');
+                }
+            }, 1000);
+        }        // 時間を表示用にフォーマットする関数
+        function formatTime(date, includeSeconds = false) {
+            const hours = padZero(date.getHours());
+            const minutes = padZero(date.getMinutes());
+            const seconds = padZero(date.getSeconds());
+            
+            if (includeSeconds) {
+                return `${hours}:${minutes}<span class="seconds">:${seconds}</span>`;
+            } else {
+                return `${hours}:${minutes}`;
+            }
+        }
+
+        // ミリ秒を時:分:秒形式にフォーマットする関数
+        function formatMilliseconds(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            return `${padZero(hours)}:${padZero(minutes)}<span class="seconds">:${padZero(seconds)}</span>`;
+        }
+
+        // 時間差を「○時間○分○秒」形式でフォーマットする関数
+        function formatTimeDifference(start, end) {
+            const diffMs = end - start;
+            const diffSec = Math.floor(diffMs / 1000);
+            const hours = Math.floor(diffSec / 3600);
+            const minutes = Math.floor((diffSec % 3600) / 60);
+            const seconds = diffSec % 60;
+            
+            let result = '';
+            if (hours > 0) result += `${hours}時間`;
+            if (minutes > 0 || hours > 0) result += `${minutes}分`;
+            result += `${seconds}秒`;
+            
+            return result;
+        }
+
+        // ゼロパディングする関数
+        function padZero(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        // 時間設定を保存する関数
+        function saveSettings() {
+            if (startTime && endTime) {
+                const settings = {
+                    startTime: startTime.toISOString(),
+                    endTime: endTime.toISOString()
+                };
+                document.cookie = `timeSettings=${JSON.stringify(settings)}; expires=${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString()}; path=/`;
+            }
+        }
+
+        // 保存された設定を読み込む関数
+        function loadSettings() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'timeSettings') {
+                    try {
+                        const settings = JSON.parse(value);
+                        startTime = new Date(settings.startTime);
+                        endTime = new Date(settings.endTime);
+                        
+                        // 入力フィールドに値をセット
+                        startTimeInput.value = formatTimeForInput(startTime);
+                        endTimeInput.value = formatTimeForInput(endTime);
+                        
+                        // ステータス更新
+                        const now = new Date();
+                        if (now >= endTime) {
+                            statusElem.textContent = "前回のイベントは終了しています";
+                        } else if (now >= startTime) {
+                            statusElem.textContent = "イベント進行中";
+                            startCountdown();
+                        } else {
+                            statusElem.textContent = `開演まであと${formatTimeDifference(now, startTime)}`;
+                        }
+                        
+                        return true;
+                    } catch (e) {
+                        console.error('設定の読み込みに失敗しました:', e);
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Date オブジェクトを input[type="time"] 用にフォーマットする関数
+        function formatTimeForInput(date) {
+            return `${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
+        }        // 初期化関数
+        function initialize() {
+            // 1秒ごとに現在時刻を更新
+            setInterval(updateCurrentTime, 1000);
+            updateCurrentTime();
+              // ヘッダーテキストの初期化と保存機能
+            const headerText = document.getElementById('headerText');
+            const eventTitleInput = document.getElementById('eventTitle');
+            const savedHeader = localStorage.getItem('headerText');
+            
+            if (savedHeader) {
+                headerText.value = savedHeader;
+                eventTitleInput.value = savedHeader;
+            }
+            
+            // ヘッダーテキスト変更時の処理
+            headerText.addEventListener('input', function() {
+                const newValue = this.value;
+                localStorage.setItem('headerText', newValue);
+                eventTitleInput.value = newValue;
+                // タイトルも更新
+                document.title = newValue || 'イベントタイムキーパー';
+            });
+            
+            // イベントタイトル入力時の処理
+            eventTitleInput.addEventListener('input', function() {
+                const newValue = this.value;
+                localStorage.setItem('headerText', newValue);
+                headerText.value = newValue;
+                // タイトルも更新
+                document.title = newValue || 'イベントタイムキーパー';
+            });
+            
+            // 設定パネルの折りたたみ機能
+            const settingsPanel = document.getElementById('settingsPanel');
+            const toggleButton = document.getElementById('toggleSettings');
+            
+            toggleButton.addEventListener('click', function() {
+                settingsPanel.classList.toggle('collapsed');
+                toggleButton.textContent = settingsPanel.classList.contains('collapsed') ? '≪' : '≫';
+            });
+            
+            // 保存された設定を読み込む
+            if (!loadSettings()) {
+                // 現在時刻から入力フィールドのデフォルト値を設定
+                const now = new Date();
+                const defaultStart = new Date(now.getTime() + 15 * 60 * 1000); // 15分後
+                const defaultEnd = new Date(now.getTime() + 75 * 60 * 1000);   // 1時間15分後
+                
+                startTimeInput.value = formatTimeForInput(defaultStart);
+                endTimeInput.value = formatTimeForInput(defaultEnd);
+            }
+            
+            // イベントリスナーの設定
+            setTimesBtn.addEventListener('click', function() {
+                const startValue = startTimeInput.value;
+                const endValue = endTimeInput.value;
+                
+                if (!startValue || !endValue) {
+                    alert('有効な時間を入力してください');
+                    return;
+                }
+                
+                // 今日の日付を使用して日時を作成
+                const today = new Date();
+                const [startHours, startMinutes] = startValue.split(':').map(Number);
+                const [endHours, endMinutes] = endValue.split(':').map(Number);
+                
+                const newStartTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 
+                                             startHours, startMinutes);
+                const newEndTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 
+                                           endHours, endMinutes);
+                
+                // 開演時間が終演時間より後の場合は、終演時間を翌日に設定
+                if (newEndTime <= newStartTime) {
+                    if (confirm('終演時間は開演時間より前になっています。終演時間を翌日に設定しますか？')) {
+                        newEndTime.setDate(newEndTime.getDate() + 1);
+                    } else {
+                        return;
+                    }
+                }
+                
+                // 時間を設定
+                startTime = newStartTime;
+                endTime = newEndTime;
+                
+                // 設定を保存
+                saveSettings();
+                
+                // カウントダウンをリセット
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                }
+                
+                // 現在時刻との比較
+                const now = new Date();                if (now >= endTime) {
+                    statusElem.textContent = "設定した終演時間は過ぎています";
+                    countdownElem.innerHTML = "00:00:00";
+                    countdownElem.classList.add('danger');
+                } else if (now >= startTime) {
+                    statusElem.textContent = "イベント進行中";
+                    startCountdown();
+                } else {
+                    statusElem.textContent = `開演まであと${formatTimeDifference(now, startTime)}`;
+                    countdownElem.innerHTML = formatMilliseconds(endTime - startTime);
+                    countdownElem.classList.remove('warning', 'danger');
+                }
+            });
+            
+            resetBtn.addEventListener('click', function() {
+                if (confirm('設定をリセットしますか？')) {
+                    // インターバルをクリア
+                    if (countdownInterval) {
+                        clearInterval(countdownInterval);
+                        countdownInterval = null;
+                    }
+                    
+                    // 変数をリセット
+                    startTime = null;
+                    endTime = null;
+                    
+                    // クッキーを削除
+                    document.cookie = 'timeSettings=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                      // 表示をリセット
+                    startCountdownElem.innerHTML = "--:--:--";
+                    countdownElem.innerHTML = "--:--:--";
+                    startTargetTimeElem.textContent = "--:--:--";
+                    endTargetTimeElem.textContent = "--:--:--";
+                    startCountdownElem.classList.remove('warning', 'danger');
+                    countdownElem.classList.remove('warning', 'danger');
+                    statusElem.textContent = "開演・終演時間を設定してください";
+                    
+                    // 現在時刻から入力フィールドのデフォルト値を設定
+                    const now = new Date();
+                    const defaultStart = new Date(now.getTime() + 15 * 60 * 1000); // 15分後
+                    const defaultEnd = new Date(now.getTime() + 75 * 60 * 1000);   // 1時間15分後
+                    
+                    startTimeInput.value = formatTimeForInput(defaultStart);
+                    endTimeInput.value = formatTimeForInput(defaultEnd);
+                }
+            });
+        }
+
+        // ページ読み込み時に初期化
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
