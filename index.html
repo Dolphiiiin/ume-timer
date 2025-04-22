@@ -347,10 +347,21 @@
             <div class="button-group">
                 <button id="setTimesBtn">時間を設定</button>
                 <button id="resetBtn">リセット</button>
+                <button id="fullScreenBtn">フルスクリーン</button>
             </div>
         </div>
     </div>
 
+    <script>
+        // フルスクリーン
+        document.getElementById('fullScreenBtn').addEventListener('click', function() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                document.documentElement.requestFullscreen();
+            }
+        });
+    </script>
     <script>
         // グローバル変数
         let startTime = null;
