@@ -1,0 +1,555 @@
+/* Bulmaを使用するため、既存のスタイルを削除または置き換え */
+
+/* 必要に応じてカスタムスタイルを追加 */
+
+/* CSS変数を定義 */
+:root {
+    --bg-color: #121212;
+    --primary-color: #ffffff;
+    --secondary-color: #11ffdf;
+    --text-color: #e0e0e0;
+    --error-color: #cf6679;
+    --panel-color: #1e1e1e;
+    --border-color: #333333;
+    --active-scale: 1.0; /* アクティブなタイマーの拡大率 */
+    
+    /* フォントサイズ倍率変数 */
+    --current-time-scale: 1.0; /* 現在時刻のフォントサイズ倍率 */
+    --countdown-scale: 1.0;    /* カウントダウンのフォントサイズ倍率 */
+    --active-countdown-scale: 1.0; /* アクティブなカウントダウンのフォントサイズ倍率 */
+    --label-scale: 1.0;        /* ラベル部分のフォントサイズ倍率 */
+    --header-scale: 0.3;       /* ヘッダーのフォントサイズ倍率 */
+    
+    /* グリッドのスペース設定 */
+    --horizontal-gap: 4rem;   /* 中央の横方向の余白 */
+    --vertical-gap: 0.5rem;   /* 縦方向の余白 */
+    
+    /* 縦横比に応じたグリッド調整 */
+    --grid-height-adjust: 1.0; /* 高さ調整係数 */
+}
+
+/* 以前の配色を反映するカスタムスタイル */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.main-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    width: 100%;
+    max-width: 98vw; /* 表示領域を最大化 */
+    height: 90vh; /* 表示領域を最大化 */
+}
+
+/* グリッドレイアウト */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    column-gap: var(--horizontal-gap); /* 横方向の余白を変数で設定 */
+    row-gap: var(--vertical-gap); /* 縦方向の余白を変数で設定 */
+    width: 100%;
+    height: calc(100% * var(--grid-height-adjust)); /* 高さを調整係数に応じて変更 */
+    align-items: center;
+    max-height: calc(100vh - 80px); /* 最大高さを画面高さから80pxに増加 */
+    overflow: visible; /* 黒い帯の問題解決のためオーバーフローを可視化 */
+    margin-bottom: 40px; /* 下部に余白を増加 */
+    padding-bottom: 40px; /* 下部にパディングを増加 */
+}
+
+.grid-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    transition: all 0.3s ease; /* アニメーションの追加 */
+}
+
+/* ヘッダー */
+.header {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+}
+
+.open-countdown {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+}
+
+/* 現在時刻 */
+.current-time-container {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+}
+
+.start-countdown {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+}
+
+/* 空白と終演 */
+.spacer {
+    grid-column: 1 / 2;
+    grid-row: 3 / 4;
+}
+
+.end-countdown {
+    grid-column: 2 / 3;
+    grid-row: 3 / 4;
+    margin-bottom: 20px; /* 終演カウントダウンの下部マージンを増加 */
+    padding-bottom: 20px; /* 終演カウントダウンの下部パディングを増加 */
+}
+
+.current-time {
+    font-size: calc(min(27vw, 15rem) * var(--current-time-scale));
+    font-weight: bold;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: flex-end;
+}
+
+.countdown-area {
+    width: 100%;
+    position: relative;
+}
+
+.countdown-combined {
+    font-size: calc(min(21vw, 10.5rem) * var(--countdown-scale));
+    font-weight: bold;
+    text-align: center;
+    color: var(--primary-color);
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease; /* アニメーションの追加 */
+}
+
+/* アクティブなタイマーの強調表示 */
+.countdown-combined.active {
+    font-size: calc(min(27vw, 13.5rem) * var(--active-countdown-scale));
+    transform: scale(var(--active-scale)); /* 少し大きく表示 */
+    z-index: 1; /* 前面に表示 */
+    color: var(--secondary-color); /* アクティブなタイマーの色を変更 */
+}
+
+.time-label {
+    font-size: calc(min(9vw, 4.5rem) * var(--label-scale));
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.time-value {
+    display: flex;
+    align-items: flex-end;
+}
+
+/* 秒の部分のスタイル調整 */
+.seconds {
+    font-size: 50%;
+    opacity: 0.8;
+    align-self: flex-end;
+}
+
+/* 折り畳みボタンのスタイル - 右側に変更 */
+.toggle-settings {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    background-color: var(--panel-color);
+    color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.toggle-settings:hover {
+    background-color: var(--secondary-color);
+    color: var(--panel-color);
+}
+
+/* 設定パネルのスタイル - 右側に変更 */
+.settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    max-width: 80vw;
+    height: 100vh;
+    background-color: var(--panel-color);
+    border-left: 1px solid var(--border-color);
+    padding: 1rem;
+    z-index: 999;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+/* 設定パネルの折り畳み用スタイル - 右側に対応 */
+.settings-panel.collapsed {
+    transform: translateX(100%);
+}
+
+.settings-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    padding-top: 2.5rem;
+    color: var(--secondary-color);
+}
+
+.time-settings {
+    margin-bottom: 1rem;
+}
+
+.setting-group {
+    margin-bottom: 1rem;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.setting-group input, .setting-group select {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* プリセットセレクトのスタイル */
+.preset-select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background-color: var(--panel-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.preset-select:hover {
+    border-color: var(--secondary-color);
+}
+
+.preset-select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(17, 255, 223, 0.2);
+}
+
+.preset-select option {
+    background-color: var(--panel-color);
+    color: var(--text-color);
+    padding: 8px;
+}
+
+/* プリセットボタンのスタイル */
+.preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.preset-btn {
+    padding: 0.5rem 0.75rem;
+    background-color: var(--bg-color);
+    color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.preset-btn:hover {
+    background-color: var(--secondary-color);
+    color: var(--bg-color);
+}
+
+.status {
+    margin: 1rem 0;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.button-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.button-group button {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background-color: var(--secondary-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+}
+
+/* 編集可能なヘッダー */
+.editable-header {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--primary-color);
+    font-size: calc(min(15vw, 8rem) * var(--header-scale)); /* 変数を使用 */
+    text-align: center;
+    width: 100%;
+    padding: 0.5rem;
+}
+
+/* 空白エリアの「現在時刻」テキストのスタイル */
+.spacer p {
+    color: var(--secondary-color);
+    font-size: calc(min(8vw, 4rem) * var(--label-scale));
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    font-weight: bold;
+    opacity: 0.8;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .current-time {
+        font-size: calc(min(24vw, 12rem) * var(--current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(18vw, 9rem) * var(--countdown-scale));
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(24vw, 12rem) * var(--active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(7.5vw, 3.75rem) * var(--label-scale));
+    }
+    
+    .editable-header {
+        font-size: calc(min(19.5vw, 9.75rem) * var(--header-scale));
+    }
+    
+    .settings-panel {
+        width: 100%;
+    }
+    
+    .spacer p {
+        font-size: calc(min(6vw, 3rem) * var(--label-scale));
+    }
+}
+
+/* スマートフォン横向き対応 */
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --active-scale: 1.1;
+        --grid-height-adjust: 0.85; /* 横向き時はグリッド高さを縮小 */
+    }
+    
+    .grid-container {
+        column-gap: calc(var(--horizontal-gap) * 0.7); /* 横向き時は横方向の余白を少し狭く */
+        row-gap: calc(var(--vertical-gap) * 0.7); /* 縦方向の余白も調整 */
+    }
+    
+    .time-display {
+        height: auto;
+        padding: 0.3rem;
+        margin: 0;
+    }
+    
+    .current-time {
+        font-size: calc(min(12vw, 6rem) * var(--current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(10.5vw, 5.25rem) * var(--countdown-scale));
+        line-height: 1.2;
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(13.5vw, 6.75rem) * var(--active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(4.5vw, 2.25rem) * var(--label-scale));
+        margin-bottom: 0.2rem;
+    }
+    
+    .editable-header {
+        font-size: calc(min(12vw, 6rem) * var(--header-scale));
+        padding: 0.2rem;
+    }
+    
+    .spacer p {
+        font-size: calc(min(4vw, 2rem) * var(--label-scale));
+    }
+    
+    /* グリッドアイテムのパディングを縮小 */
+    .grid-item {
+        padding: 0.3rem;
+    }
+}
+
+/* 特に小さい画面（iPhoneSE等）の横向き対応 */
+@media (max-height: 375px) and (orientation: landscape) {
+    :root {
+        --grid-height-adjust: 0.75; /* さらに小さい画面では高さをより縮小 */
+    }
+    
+    .grid-container {
+        column-gap: calc(var(--horizontal-gap) * 0.5); /* 非常に小さい画面では横方向の余白をさらに狭く */
+        row-gap: calc(var(--vertical-gap) * 0.5); /* 縦方向の余白もさらに縮小 */
+    }
+    
+    .time-display {
+        padding: 0.2rem;
+    }
+    
+    .current-time {
+        font-size: calc(min(10vw, 5rem) * var(--current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(8vw, 4rem) * var(--countdown-scale));
+        line-height: 1.1;
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(9vw, 4.5rem) * var(--active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(3.5vw, 1.75rem) * var(--label-scale));
+        margin-bottom: 0.1rem;
+    }
+    
+    .editable-header {
+        font-size: calc(min(9vw, 4.5rem) * var(--header-scale));
+        padding: 0.1rem;
+    }
+    
+    /* 小画面でのテキスト切れ防止 */
+    .time-label, .time-value {
+        white-space: nowrap;
+    }
+    
+    .spacer p {
+        font-size: calc(min(3.25vw, 1.6rem) * var(--label-scale));
+    }
+    
+    /* 非常に小さい画面ではグリッドアイテムのパディングをさらに縮小 */
+    .grid-item {
+        padding: 0.2rem;
+    }
+}
+
+/* スマートフォン縦向き対応 */
+@media (max-width: 500px) and (orientation: portrait) {
+    :root {
+        --grid-height-adjust: 0.95; /* 縦向き時の高さ調整係数 */
+    }
+    
+    .grid-container {
+        column-gap: calc(var(--horizontal-gap) * 0.6); /* 縦向き時は横方向の余白を少し狭く */
+        row-gap: calc(var(--vertical-gap) * 0.8); /* 縦方向の余白も調整 */
+    }
+    
+    .current-time {
+        font-size: calc(min(21vw, 10.5rem) * var(--current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(15vw, 7.5rem) * var(--countdown-scale));
+        line-height: 1.3;
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(18vw, 9rem) * var(--active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(6vw, 3rem) * var(--label-scale));
+        /* テキスト折り返し設定 */
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+    
+    .editable-header {
+        font-size: calc(min(15vw, 7.5rem) * var(--header-scale));
+    }
+    
+    .spacer p {
+        font-size: calc(min(5vw, 2.5rem) * var(--label-scale));
+    }
+}
+
+/* カウントダウンの警告色 */
+.warning {
+    color: orange;
+}
+
+.danger {
+    color: var(--error-color);
+}
+
+.elapsed {
+    color: grey;
+}
