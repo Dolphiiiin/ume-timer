@@ -12,13 +12,15 @@
     --panel-color: #1e1e1e;
     --border-color: #333333;
     --active-scale: 1.0; /* アクティブなタイマーの拡大率 */
+    --inactive-scale: 0.8; /* 非アクティブなタイマーの縮小率 */
     
     /* フォントサイズ倍率変数 */
-    --current-time-scale: 1.0; /* 現在時刻のフォントサイズ倍率 */
-    --countdown-scale: 1.0;    /* カウントダウンのフォントサイズ倍率 */
+    --font-size-multiplier: 1.5; /* 全体のフォントサイズ倍率 - 2.0から1.5に変更してオーバーフロー対策 */
+    --current-time-scale: 1.5; /* 現在時刻のフォントサイズ倍率 */
+    --countdown-scale: 0.9;    /* カウントダウンのフォントサイズ倍率 */
     --active-countdown-scale: 1.0; /* アクティブなカウントダウンのフォントサイズ倍率 */
     --label-scale: 1.0;        /* ラベル部分のフォントサイズ倍率 */
-    --header-scale: 0.3;       /* ヘッダーのフォントサイズ倍率 */
+    --header-scale: 0.4;       /* ヘッダーのフォントサイズ倍率 */
     
     /* グリッドのスペース設定 */
     --horizontal-gap: 4rem;   /* 中央の横方向の余白 */
@@ -46,7 +48,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow: hidden; /* オーバーフローを隠す設定を確保 */
 }
 
 .main-container {
@@ -55,6 +57,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden; /* オーバーフローを隠す設定を追加 */
 }
 
 .time-display {
@@ -66,6 +69,7 @@ body {
     width: 100%;
     max-width: 98vw; /* 表示領域を最大化 */
     height: 90vh; /* 表示領域を最大化 */
+    overflow: hidden; /* オーバーフローを隠す設定を追加 */
 }
 
 /* グリッドレイアウト */
@@ -79,9 +83,9 @@ body {
     height: calc(100% * var(--grid-height-adjust)); /* 高さを調整係数に応じて変更 */
     align-items: center;
     max-height: calc(100vh - 80px); /* 最大高さを画面高さから80pxに増加 */
-    overflow: visible; /* 黒い帯の問題解決のためオーバーフローを可視化 */
-    margin-bottom: 40px; /* 下部に余白を増加 */
-    padding-bottom: 40px; /* 下部にパディングを増加 */
+    overflow: hidden; /* 黒い帯の問題解決のためオーバーフローを非表示に変更 */
+    margin-bottom: 0; /* 下部の余白を削除 */
+    padding-bottom: 0; /* 下部のパディングを削除 */
 }
 
 .grid-item {
@@ -152,15 +156,23 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: all 0.3s ease; /* アニメーションの追加 */
+    transition: transform 0.3s ease-in-out, font-size 0.3s ease-in-out; /* アニメーションの追加 */
+    max-width: 100%; /* 最大幅を制限 */
 }
 
 /* アクティブなタイマーの強調表示 */
 .countdown-combined.active {
     font-size: calc(min(27vw, 13.5rem) * var(--active-countdown-scale));
     transform: scale(var(--active-scale)); /* 少し大きく表示 */
-    z-index: 1; /* 前面に表示 */
+    z-index: 2; /* 前面に表示 */
     color: var(--secondary-color); /* アクティブなタイマーの色を変更 */
+}
+
+/* 非アクティブなタイマーの縮小表示 */
+.countdown-combined.inactive {
+    transform: scale(var(--inactive-scale)); /* 少し小さく表示 */
+    opacity: 0.8; /* 非アクティブなタイマーの透明度を変更 */
+    z-index: 1; /* 背面に表示 */
 }
 
 .time-label {
@@ -538,6 +550,99 @@ button:hover {
     
     .spacer p {
         font-size: calc(min(5vw, 2.5rem) * var(--label-scale));
+    }
+}
+
+/* 特に縦幅の狭いスクリーン向けの追加設定 */
+@media (max-height: 480px) {
+    :root {
+        --font-size-multiplier: 1.2; /* 全体のフォントサイズ倍率をさらに小さく */
+        --grid-height-adjust: 0.7; /* グリッドの高さをさらに縮小 */
+        --vertical-gap: 0.3rem; /* 縦方向の余白をさらに縮小 */
+    }
+    
+    .grid-container {
+        row-gap: 0.2rem; /* 縦方向の余白を最小に */
+        max-height: 100vh; /* 最大高さを画面高さいっぱいに */
+    }
+    
+    .time-label {
+        margin-bottom: 0; /* ラベルの下マージンを削除 */
+        font-size: calc(min(4vw, 2rem) * var(--label-scale));
+    }
+    
+    .countdown-combined {
+        line-height: 1; /* 行の高さを最小に */
+    }
+    
+    .current-time {
+        font-size: calc(min(8vw, 4rem) * var(--current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(7vw, 3.5rem) * var(--countdown-scale));
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(8vw, 4rem) * var(--active-countdown-scale));
+    }
+    
+    .editable-header {
+        font-size: calc(min(8vw, 4rem) * var(--header-scale));
+        padding: 0.1rem;
+    }
+    
+    .spacer p {
+        font-size: calc(min(3vw, 1.5rem) * var(--label-scale));
+    }
+    
+    /* グリッドアイテムのパディングを最小に */
+    .grid-item {
+        padding: 0.1rem;
+    }
+    
+    /* 終演カウントダウンの余白を削除 */
+    .end-countdown {
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+}
+
+/* 超小型スクリーン（小さいスマートフォンの横向きなど）向け */
+@media (max-height: 320px) {
+    :root {
+        --font-size-multiplier: 1.0; /* 全体のフォントサイズ倍率をさらに小さく */
+        --grid-height-adjust: 0.6; /* グリッドの高さをさらに縮小 */
+        --horizontal-gap: 2rem; /* 横方向の余白も縮小 */
+    }
+    
+    .grid-container {
+        column-gap: 1rem; /* 横方向の余白を最小に */
+        row-gap: 0.1rem; /* 縦方向の余白を最小に */
+    }
+    
+    .current-time {
+        font-size: calc(min(6vw, 3rem) * var(--current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(5vw, 2.5rem) * var(--countdown-scale));
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(6vw, 3rem) * var(--active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(3vw, 1.5rem) * var(--label-scale));
+    }
+    
+    .editable-header {
+        font-size: calc(min(6vw, 3rem) * var(--header-scale));
+    }
+    
+    .spacer p {
+        font-size: calc(min(2.5vw, 1.25rem) * var(--label-scale));
     }
 }
 

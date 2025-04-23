@@ -84,6 +84,11 @@ function updateCurrentTime() {
         const startIsPast = timeToStart < 0;
         const endIsPast = timeToEnd < 0;
 
+        // すべてのタイマーからactiveとinactiveクラスを削除
+        openCountdownCombinedElem.classList.remove('active', 'inactive');
+        startCountdownCombinedElem.classList.remove('active', 'inactive');
+        endCountdownCombinedElem.classList.remove('active', 'inactive');
+
         // 開場までのカウントダウン
         if (openTime) {
             if (openIsPast) {
@@ -95,8 +100,10 @@ function updateCurrentTime() {
                 // 開場終了、開演前の場合は開場タイマーをアクティブに
                 if (!startIsPast) {
                     openCountdownCombinedElem.classList.add('active');
-                    startCountdownCombinedElem.classList.remove('active');
-                    endCountdownCombinedElem.classList.remove('active');
+                    startCountdownCombinedElem.classList.add('inactive');
+                    endCountdownCombinedElem.classList.add('inactive');
+                } else {
+                    openCountdownCombinedElem.classList.add('inactive');
                 }
             } else {
                 // 開場前はカウントダウン表示
@@ -107,8 +114,8 @@ function updateCurrentTime() {
                 
                 // まだ何も始まっていない場合は開場タイマーをアクティブに
                 openCountdownCombinedElem.classList.add('active');
-                startCountdownCombinedElem.classList.remove('active');
-                endCountdownCombinedElem.classList.remove('active');
+                startCountdownCombinedElem.classList.add('inactive');
+                endCountdownCombinedElem.classList.add('inactive');
                 
                 if (timeToOpen <= 60000) { // 1分前
                     openCountdownCombinedElem.classList.add('warning');
@@ -120,7 +127,7 @@ function updateCurrentTime() {
         } else {
             // 開場時間が設定されていない場合は非表示
             openCountdownCombinedElem.innerHTML = '<span class="time-label">開場時間未設定</span>';
-            openCountdownCombinedElem.classList.remove('active');
+            openCountdownCombinedElem.classList.add('inactive');
         }
 
         // 開演までのカウントダウン
@@ -132,9 +139,11 @@ function updateCurrentTime() {
             
             // 開演終了、終演前の場合は終演タイマーをアクティブに
             if (!endIsPast) {
-                openCountdownCombinedElem.classList.remove('active');
-                startCountdownCombinedElem.classList.remove('active');
+                openCountdownCombinedElem.classList.add('inactive');
+                startCountdownCombinedElem.classList.add('inactive');
                 endCountdownCombinedElem.classList.add('active');
+            } else {
+                startCountdownCombinedElem.classList.add('inactive');
             }
         } else {
             // 開演前はカウントダウン表示
@@ -145,9 +154,17 @@ function updateCurrentTime() {
             
             // 開場後、開演前の場合は開演タイマーをアクティブに
             if (openTime && now >= openTime) {
-                openCountdownCombinedElem.classList.remove('active');
+                openCountdownCombinedElem.classList.add('inactive');
                 startCountdownCombinedElem.classList.add('active');
-                endCountdownCombinedElem.classList.remove('active');
+                endCountdownCombinedElem.classList.add('inactive');
+            } else {
+                if (!openTime) {
+                    // 開場時間が設定されていない場合は開演タイマーをアクティブに
+                    startCountdownCombinedElem.classList.add('active');
+                    endCountdownCombinedElem.classList.add('inactive');
+                } else {
+                    startCountdownCombinedElem.classList.add('inactive');
+                }
             }
             
             if (timeToStart <= 60000) { // 1分前
@@ -166,8 +183,8 @@ function updateCurrentTime() {
             endCountdownCombinedElem.classList.add('danger');
             
             // 終演後は終演タイマーをアクティブのまま
-            openCountdownCombinedElem.classList.remove('active');
-            startCountdownCombinedElem.classList.remove('active');
+            openCountdownCombinedElem.classList.add('inactive');
+            startCountdownCombinedElem.classList.add('inactive');
             endCountdownCombinedElem.classList.add('active');
 
             if (!startIsPast) {
@@ -192,12 +209,27 @@ function updateCurrentTime() {
 
             // ステータス更新
             if (now >= startTime) {
+                // 開演後、終演前は終演タイマーをアクティブに
+                openCountdownCombinedElem.classList.add('inactive');
+                startCountdownCombinedElem.classList.add('inactive');
+                endCountdownCombinedElem.classList.add('active');
                 statusElem.textContent = "イベント進行中";
             } else if (openTime && now >= openTime) {
+                // 開場中は開演タイマーをアクティブに
+                openCountdownCombinedElem.classList.add('inactive');
+                startCountdownCombinedElem.classList.add('active');
+                endCountdownCombinedElem.classList.add('inactive');
                 statusElem.textContent = "開場中";
             } else if (openTime) {
+                // 開場前は開場タイマーをアクティブに
+                openCountdownCombinedElem.classList.add('active');
+                startCountdownCombinedElem.classList.add('inactive');
+                endCountdownCombinedElem.classList.add('inactive');
                 statusElem.textContent = `開場まであと${formatTimeDifference(now, openTime)}`;
             } else {
+                // 開場時間が設定されていない場合は開演タイマーをアクティブに
+                startCountdownCombinedElem.classList.add('active');
+                endCountdownCombinedElem.classList.add('inactive');
                 statusElem.textContent = `開演まであと${formatTimeDifference(now, startTime)}`;
             }
         }
@@ -251,6 +283,18 @@ function padZero(num) {
     return num.toString().padStart(2, '0');
 }        // フォントサイズを画面サイズに最適化する関数
 function adjustFontSizes() {
+    // CSS変数からカスタムフォントサイズ倍率を取得
+    const root = document.documentElement;
+    const fontSizeMultiplier = parseFloat(getComputedStyle(root).getPropertyValue('--font-size-multiplier') || '1');
+    const currentTimeScale = parseFloat(getComputedStyle(root).getPropertyValue('--current-time-scale') || '1.5');
+    const countdownScale = parseFloat(getComputedStyle(root).getPropertyValue('--countdown-scale') || '1.0');
+    
+    // カスタム倍率が設定されている場合（1でない場合）は、自動調整をスキップ
+    if (fontSizeMultiplier !== 1) {
+        console.log('カスタムフォントサイズ倍率が設定されています:', fontSizeMultiplier);
+        return;
+    }
+    
     const timeDisplay = document.querySelector('.time-display');
     if (!timeDisplay) return;
 
