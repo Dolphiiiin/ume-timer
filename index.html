@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>イベントタイムキーパー</title>
-    <link rel="stylesheet" href="styles.css">
+    <!-- 共通ベースCSS -->
+    <link rel="stylesheet" href="css/base.css">
+    <!-- 横向き専用CSS -->
+    <link rel="stylesheet" href="css/landscape.css">
+    <!-- 縦向き専用CSS -->
+    <link rel="stylesheet" href="css/portrait.css">
     <!-- BulmaのCSSを読み込む -->
     <link rel="stylesheet" href="bulma/css/bulma.min.css">
+    <!-- Font Awesome CDNを追加 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -16,7 +23,7 @@
                 <div class="grid-container">
                     <!-- ヘッダー行 -->
                     <div class="grid-item header">
-                        <input type="text" class="editable-header" id="headerText" placeholder="イベント名を入力してください" value="イベントタイムキーパー">
+                        <div class="editable-header" id="headerText">イベントタイムキーパー</div>
                     </div>
                     <div class="grid-item open-countdown">
                         <div class="countdown-combined" id="openCountdownCombined">
@@ -27,6 +34,10 @@
                     
                     <!-- 現在時刻行 -->
                     <div class="grid-item current-time-container">
+                        <!-- 現在時刻ラベルをdivで包み、表示位置を調整 -->
+                        <div class="time-label-container">
+                            <p class="time-label">現在時刻</p>
+                        </div>
                         <div class="current-time" id="currentTime">--:--<span class="seconds">:--</span></div>
                     </div>
                     <div class="grid-item start-countdown">
@@ -37,9 +48,6 @@
                     </div>
                     
                     <!-- 空白行 + 終演カウントダウン -->
-                    <div class="grid-item spacer">
-                        <p>現在時刻</p>
-                    </div>
                     <div class="grid-item end-countdown">
                         <div class="countdown-combined" id="endCountdownCombined">
                             <span class="time-label">終演 --:-- まで</span>
@@ -49,29 +57,43 @@
                 </div>
             </div>
         </div>
-        <button class="toggle-settings" id="toggleSettings">≫</button>
+        <button class="toggle-settings" id="toggleSettings"><i class="fas fa-cog"></i></button>
+        <button class="toggle-fullscreen" id="toggleFullscreen"><i class="fas fa-expand"></i></button>
+        <!-- 設定パネルの背景オーバーレイを追加 -->
+        <div class="settings-overlay collapsed" id="settingsOverlay"></div>
         <div class="settings-panel collapsed" id="settingsPanel">
-            <div class="settings-title">時間設定</div>
+            <button class="close-settings" id="closeSettings"><i class="fas fa-times"></i></button>
+            <div class="settings-title"><i class="fas fa-cog"></i> 時間設定</div>
             <div class="time-settings">
                 <div class="setting-group">
-                    <label for="eventTitle">イベントタイトル</label>
+                    <label for="eventTitle"><i class="fas fa-heading"></i> イベント名</label>
                     <input type="text" id="eventTitle" class="event-title-input" placeholder="イベント名を入力してください">
                 </div>
                 <div class="setting-group">
-                    <label for="openTime">開場時間</label>
+                    <label for="openTime"><i class="fas fa-door-open"></i> 開場時間</label>
                     <input type="time" id="openTime" name="openTime">
                 </div>
                 <div class="setting-group">
-                    <label for="startTime">開演時間</label>
+                    <label for="startTime"><i class="fas fa-play"></i> 開演時間</label>
                     <input type="time" id="startTime" name="startTime">
                 </div>
                 <div class="setting-group">
-                    <label for="endTime">終演時間</label>
+                    <label for="endTime"><i class="fas fa-flag-checkered"></i> 終演時間</label>
                     <input type="time" id="endTime" name="endTime">
                 </div>
                 <!-- プリセットボタンエリアを追加 -->
                 <div class="setting-group">
-                    <label for="preset-select">プリセット時間</label>
+                    <label for="venue-input"><i class="fas fa-map-marker-alt"></i> 会場検索</label>
+                    <div class="search-container">
+                        <input type="text" id="venue-input" list="venue-list" class="venue-input" placeholder="会場名を入力または選択">
+                        <datalist id="venue-list">
+                            <!-- CSVから動的に生成されます -->
+                        </datalist>
+                    </div>
+                </div>
+                <!-- プリセット時間選択を追加 -->
+                <div class="setting-group">
+                    <label for="preset-select"><i class="fas fa-clock"></i> プリセット時間</label>
                     <select id="preset-select" class="preset-select">
                         <option value="">-- プリセットを選択 --</option>
                         <option value="preset1" data-start="16:00" data-open="15:30">開演16:00～（開場15:30～、終演17:30）</option>
@@ -81,11 +103,16 @@
                     </select>
                 </div>
             </div>
-            <div class="status" id="status">時間を設定してください</div>
             <div class="button-group">
-                <button id="setTimesBtn">時間を設定</button>
-                <button id="resetBtn">リセット</button>
-                <button id="fullScreenBtn">フルスクリーン</button>
+                <button id="setTimesBtn" class="custom-button"><i class="fas fa-clock"></i> 時間を設定</button>
+                <button id="reloadPresetBtn" class="custom-button"><i class="fas fa-sync-alt"></i> プリセット再読み込み</button>
+            </div>
+            <div class="status-container">
+                <div class="status" id="status"><i class="fas fa-info-circle"></i> 時間を設定してください</div>
+            </div>
+            
+            <div class="button-group">
+                <button id="fullScreenBtn" class="custom-button"><i class="fas fa-expand"></i> フルスクリーン</button>
             </div>
         </div>
     </div>

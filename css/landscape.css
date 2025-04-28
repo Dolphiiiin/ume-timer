@@ -1,0 +1,111 @@
+/* 横画面（ランドスケープ）専用スタイル */
+
+/* オーバーフロー防止 */
+.time-display {
+    overflow-x: hidden;
+}
+.countdown-combined {
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* 高さ自動調整 */
+.container,
+.main-container {
+    height: auto;
+    max-height: 100vh;
+}
+.time-display {
+    height: auto;
+    max-height: 100vh;
+}
+.grid-container {
+    height: auto;
+    max-height: 100vh;
+}
+
+/* 横向き用フォントスケール変数定義 */
+@media (orientation: landscape) {
+    :root {
+        --landscape-current-time-scale: var(--current-time-scale);
+        --landscape-countdown-scale: 0.6;
+        --landscape-active-countdown-scale: 0.6;
+        --landscape-label-scale: 0.9;
+        --landscape-header-scale: var(--header-scale);
+    }
+    
+    /* 横向き時のグリッド列の独立設定 */
+    .grid-container {
+        /* 各列を最小0、最大1frで設定し、コンテンツに影響されないようにする */
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .grid-container > .grid-item {
+        /* コンテンツの幅が列幅を超えてもレイアウトを崩さない */
+        min-width: 0;
+        overflow: hidden;
+    }
+}
+
+/* スマートフォン横向き対応（max-height: 500px） */
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --active-scale: 1.1;
+        --grid-height-adjust: 0.85;
+    }
+    .current-time {
+        font-size: calc(min(12vw, 6rem) * var(--landscape-current-time-scale));
+    }
+    .countdown-combined {
+        font-size: calc(min(10.5vw, 5.25rem) * var(--landscape-countdown-scale));
+        line-height: 1.2;
+    }
+    .countdown-combined.active {
+        font-size: calc(min(13.5vw, 6.75rem) * var(--landscape-active-countdown-scale));
+    }
+    .time-label {
+        font-size: calc(min(4.5vw, 2.25rem) * var(--landscape-label-scale));
+        margin-bottom: 0.2rem;
+    }
+    .editable-header {
+        font-size: calc(min(12vw, 6rem) * var(--landscape-header-scale));
+        padding: 0.2rem;
+    }
+    .spacer p {
+        font-size: calc(min(4vw, 2rem) * var(--landscape-label-scale));
+    }
+    .grid-item {
+        padding: 0.3rem;
+    }
+}
+
+/* 特に小さい画面（max-height: 375px）横向き対応 */
+@media (max-height: 375px) and (orientation: landscape) {
+    :root {
+        --grid-height-adjust: 0.75;
+    }
+    .current-time {
+        font-size: calc(min(10vw, 5rem) * var(--landscape-current-time-scale));
+    }
+    .countdown-combined {
+        font-size: calc(min(8vw, 4rem) * var(--landscape-countdown-scale));
+        line-height: 1.1;
+    }
+    .countdown-combined.active {
+        font-size: calc(min(9vw, 4.5rem) * var(--landscape-active-countdown-scale));
+    }
+    .time-label {
+        font-size: calc(min(3.5vw, 1.75rem) * var(--landscape-label-scale));
+        margin-bottom: 0.1rem;
+    }
+    .editable-header {
+        font-size: calc(min(9vw, 4.5rem) * var(--landscape-header-scale));
+        padding: 0.1rem;
+    }
+    .spacer p {
+        font-size: calc(min(3.25vw, 1.6rem) * var(--landscape-label-scale));
+    }
+    .grid-item {
+        padding: 0.2rem;
+    }
+}

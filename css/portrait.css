@@ -1,0 +1,89 @@
+/* 縦画面（ポートレート）専用スタイル */
+@media (orientation: portrait) {
+    /* 縦向き用フォントスケール変数定義 */
+    :root {
+        --portrait-current-time-scale: 1.5;
+        --portrait-countdown-scale: 0.6;
+        --portrait-active-countdown-scale: 0.8;
+        --portrait-label-scale: 1.5;
+        --portrait-header-scale: 0.6;
+        /* グリッド高さ調整係数 */
+        --grid-height-adjust: 0.95;
+    }
+
+    
+    #spacer-text {
+        display: none;
+    }
+
+    /* グリッドを1列に変更 */
+    .grid-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(6, auto);
+        column-gap: 0;
+        row-gap: 0.2rem; /* グリッド間の余白を削減 */
+        max-height: none;
+        height: auto;
+        overflow: visible;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        /* アドレスバーによる隠れ対策: 上部に余白を追加 */
+        padding-top: 1rem; /* ベース余白 */
+        padding-top: env(safe-area-inset-top); /* セーフエリア対応 */
+    }
+    .header {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0; /* ヘッダーのはみ出しを防止 */
+    }
+    .current-time-container {
+        grid-column: 1;
+        grid-row: 2;
+        margin: 0; /* 上下余白を削除 */
+    }
+    .spacer { grid-column: 1; grid-row: 3; margin-top: 0.5rem; }
+    .open-countdown { grid-column: 1; grid-row: 4; }
+    .start-countdown { grid-column: 1; grid-row: 5; }
+    .end-countdown { grid-column: 1; grid-row: 6; margin-bottom: 1rem; padding-bottom: 1rem; }
+    .time-display { height: auto; justify-content: center; align-items: center; padding-top: 1.5rem; }
+    .current-time {
+        /* 縦向き専用フォントスケール適用、サイズ上限を増加 */
+        font-size: calc(min(16vw, 7rem) * var(--portrait-current-time-scale));
+    }
+    .countdown-combined {
+        /* 縦向き専用フォントスケール適用、サイズ上限を増加 */
+        font-size: calc(min(14vw, 8rem) * var(--portrait-countdown-scale));
+        line-height: 1.3;
+    }
+    .countdown-combined.active {
+        /* 縦向き専用アクティブフォントスケール適用、サイズ上限を増加 */
+        font-size: calc(min(18vw, 9rem) * var(--portrait-active-countdown-scale));
+    }
+    .time-label {
+        /* 縦向き専用ラベルスケール適用、サイズ上限を増加 */
+        font-size: calc(min(6vw, 3rem) * var(--portrait-label-scale));
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        margin-bottom: 0.2rem;
+    }
+    .editable-header {
+        /* 縦向き専用ヘッダースケール適用、サイズ上限を増加 */
+        font-size: calc(min(12vw, 6rem) * var(--portrait-header-scale));
+    }
+    .spacer p {
+        /* 縦向き専用空白テキストスケール適用、サイズ上限を増加 */
+        font-size: calc(min(6vw, 3rem) * var(--portrait-label-scale));
+    }
+}
+
+/* 横向き（ランドスケープ）時にグリッドを縦中央に配置 */
+@media (orientation: landscape) {
+    .grid-container {
+        height: 100vh;               /* ビューポート高を最大限使用 */
+        align-content: center;       /* グリッド行全体を縦中央 */
+        /* 必要に応じて横方向も中央寄せしたい場合は以下を有効化 */
+        /* justify-content: center; */
+    }
+}
