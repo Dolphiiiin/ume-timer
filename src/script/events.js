@@ -264,8 +264,16 @@ function initVenueSearch() {
             const lines = data.split('\n');
             console.log(`CSV行数: ${lines.length}`);
             
+            const now = new Date();
+            now.setHours(0, 0, 0, 0); // 時間部分をリセット
+            
+            // 日程ごとにイベントを分類
+            const scheduleMap = new Map(); // 日程ごとのイベントマップ
+            
+            // 今日のイベントを格納する配列
+            const todayEvents = [];
+            
             // ヘッダー行をスキップして各行を処理
-            const events = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line || line.startsWith('//')) {
@@ -273,56 +281,191 @@ function initVenueSearch() {
                     continue; // 空行やコメント行はスキップ
                 }
                 
-                const [date, region, venue, openTime, startTime, endTime] = line.split(',');
-                if (!date || !region || !venue || !openTime || !startTime || !endTime) {
-                    console.log(`必須データ不足の行 ${i}: ${line}`);
-                    continue; // 必須データがない行はスキップ
+                const [date, region, venue, openTime, startTime, endTime, schedule] = line.split(',');
+                
+                // 基本データ（日付、地域、会場）がない行はスキップ
+                if (!date || !region || !venue) {
+                    console.log(`基本データ不足の行 ${i}: ${line}`);
+                    continue;
                 }
                 
-                events.push({
+                // 日程（前期・後期など）を取得、ない場合は「その他」とする
+                const scheduleKey = schedule && schedule.trim() ? schedule.trim() : 'その他';
+                
+                // イベントデータを作成
+                const eventData = {
                     date: date,
                     region: region,
                     venue: venue,
-                    openTime: openTime,
-                    startTime: startTime,
-                    endTime: endTime
+                    openTime: openTime || '',
+                    startTime: startTime || '',
+                    endTime: endTime || '',
+                    eventDate: new Date(date),
+                    isIncomplete: !openTime || !startTime || !endTime, // 時間未定フラグ
+                    isPast: new Date(date) < now // 過去イベントフラグ
+                };
+                
+                // 今日のイベントかどうかチェック
+                const eventDate = new Date(date);
+                eventDate.setHours(0, 0, 0, 0); // 時間部分をリセット
+                if (eventDate.getTime() === now.getTime() && !eventData.isIncomplete) {
+                    todayEvents.push(eventData);
+                }
+                
+                // 日程ごとのマップに追加
+                if (!scheduleMap.has(scheduleKey)) {
+                    scheduleMap.set(scheduleKey, []);
+                }
+                scheduleMap.get(scheduleKey).push(eventData);
+            }
+            
+            // 既存の階層ページコンテナを取得
+            const scheduleItemsContainer = document.getElementById('scheduleItems');
+            const eventItemsContainer = document.getElementById('eventItems');
+            const pastEventItemsContainer = document.getElementById('pastEventItems');
+            
+            // クリア
+            scheduleItemsContainer.innerHTML = '';
+            eventItemsContainer.innerHTML = '';
+            pastEventItemsContainer.innerHTML = '';
+            
+            // 既存のオプションをクリア（隠しセレクトボックス用）
+            venueSelect.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "-- 会場を選択 --";
+            venueSelect.appendChild(defaultOption);
+            
+            // 日程情報のグローバル変数
+            window.scheduleData = {
+                schedules: [], // 全ての日程
+                currentSchedule: null, // 現在選択中の日程
+                scheduleEvents: {} // 各日程のイベント
+            };
+            
+            // 今日のイベントがある場合、最初に表示
+            if (todayEvents.length > 0) {
+                // 今日のイベントセクションを作成
+                const todaySection = document.createElement('div');
+                todaySection.className = 'hierarchy-today-section';
+                
+                // 今日のイベントヘッダーを作成
+                const todayHeader = document.createElement('div');
+                todayHeader.className = 'hierarchy-subheader today-header';
+                todayHeader.innerHTML = `<i class="fas fa-star"></i> 本日のイベント`;
+                todaySection.appendChild(todayHeader);
+                
+                // 今日のイベントを追加
+                todayEvents.forEach(event => {
+                    const eventItem = createEventItem(event);
+                    eventItem.classList.add('today-event');
+                    todaySection.appendChild(eventItem);
+                });
+                
+                // 区切り線を追加
+                const divider = document.createElement('div');
+                divider.className = 'hierarchy-divider';
+                todaySection.appendChild(divider);
+                
+                // 今日のイベントセクションを最初に追加
+                scheduleItemsContainer.appendChild(todaySection);
+                
+                // 隠しセレクトボックスに今日のイベントセクションを追加
+                const todayHeader2 = document.createElement('optgroup');
+                todayHeader2.label = `【本日のイベント】`;
+                todayHeader2.classList.add('today-events-group');
+                venueSelect.appendChild(todayHeader2);
+                
+                todayEvents.forEach(event => {
+                    const option = createEventOption(event);
+                    option.classList.add('today-event-option');
+                    todayHeader2.appendChild(option);
                 });
             }
             
-            console.log(`パースしたイベント数: ${events.length}`);
-            
-            // 既存のオプションをクリア（最初のデフォルトオプションは保持）
-            const defaultOption = venueSelect.options[0];
-            venueSelect.innerHTML = '';
-            venueSelect.appendChild(defaultOption);
-            
-            // 取得したイベントデータをselect要素に追加
-            events.forEach((event, index) => {
-                const option = document.createElement('option');
+            // 日程ごとにイベントを処理して階層構造を作成
+            scheduleMap.forEach((events, scheduleName) => {
+                // 日程データを追加
+                window.scheduleData.schedules.push(scheduleName);
                 
-                // 会場名（地域名）- 開催日 の形式で表示
-                const optionText = `${event.venue}（${event.region}） - ${formatDateForDisplay(event.date)}`;
-                option.value = optionText;
-                option.textContent = optionText;
+                // 未来と過去のイベントに分類
+                const futureEvents = events.filter(event => !event.isPast);
+                const pastEvents = events.filter(event => event.isPast);
                 
-                // データ属性にイベント情報を追加
-                option.dataset.date = event.date;
-                option.dataset.region = event.region;
-                option.dataset.venue = event.venue;
-                option.dataset.openTime = event.openTime;
-                option.dataset.startTime = event.startTime;
-                option.dataset.endTime = event.endTime;
+                // 日付順にソート
+                futureEvents.sort((a, b) => a.eventDate - b.eventDate);
+                pastEvents.sort((a, b) => b.eventDate - a.eventDate); // 過去イベントは新しい順
                 
-                venueSelect.appendChild(option);
+                // スケジュールデータに追加
+                window.scheduleData.scheduleEvents[scheduleName] = {
+                    future: futureEvents,
+                    past: pastEvents
+                };
                 
-                if (index < 3) {
-                    console.log(`追加したオプション ${index}: ${optionText}`);
+                // 日程選択肢を追加
+                const scheduleItem = document.createElement('div');
+                scheduleItem.className = 'hierarchy-item schedule-item';
+                scheduleItem.dataset.schedule = scheduleName;
+                
+                // アイコンとテキストを追加
+                scheduleItem.innerHTML = `
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>${scheduleName}</span>
+                    <span class="badge">${futureEvents.length + pastEvents.length}</span>
+                `;
+                
+                // クリックイベントを追加
+                scheduleItem.addEventListener('click', function() {
+                    selectSchedule(scheduleName);
+                });
+                
+                // 日程リストに追加
+                scheduleItemsContainer.appendChild(scheduleItem);
+                
+                // 隠しセレクトボックスにoptgroupを追加
+                const scheduleHeader = document.createElement('optgroup');
+                scheduleHeader.label = `【${scheduleName}】`;
+                venueSelect.appendChild(scheduleHeader);
+                
+                // 未来のイベントをoptgroupに追加
+                if (futureEvents.length > 0) {
+                    futureEvents.forEach(event => {
+                        const option = createEventOption(event);
+                        scheduleHeader.appendChild(option);
+                    });
+                }
+                
+                // 過去のイベントをoptgroupに追加
+                if (pastEvents.length > 0) {
+                    const pastHeader = document.createElement('optgroup');
+                    pastHeader.label = `【${scheduleName}】終了済みイベント`;
+                    pastHeader.classList.add('past-events-group');
+                    venueSelect.appendChild(pastHeader);
+                    
+                    pastEvents.forEach(event => {
+                        const option = createEventOption(event);
+                        pastHeader.appendChild(option);
+                    });
                 }
             });
             
             console.log(`selectに追加したオプション数: ${venueSelect.options.length - 1}`); // デフォルトオプションを除く
             
-            // 会場選択のイベントリスナーを設定
+            // 戻るボタンのイベントリスナーを設定
+            document.getElementById('backToSchedule').addEventListener('click', function() {
+                showScheduleList();
+            });
+            
+            document.getElementById('backToEvents').addEventListener('click', function() {
+                const currentSchedule = window.scheduleData.currentSchedule;
+                if (currentSchedule) {
+                    selectSchedule(currentSchedule);
+                } else {
+                    showScheduleList();
+                }
+            });
+            
+            // 会場選択のイベントリスナーを設定（隠しセレクトボックス用）
             venueSelect.removeEventListener('change', handleVenueSelection);
             venueSelect.addEventListener('change', handleVenueSelection);
             console.log('会場選択のイベントリスナーを設定しました');
@@ -330,6 +473,185 @@ function initVenueSearch() {
         .catch(error => {
             console.error('会場データの読み込みエラー:', error);
         });
+}
+
+// 選択された日程の内容を表示
+function selectSchedule(scheduleName) {
+    // 選択した日程を記録
+    window.scheduleData.currentSchedule = scheduleName;
+    
+    // 日程ページを隠してイベントページを表示
+    document.getElementById('scheduleList').style.display = 'none';
+    document.getElementById('eventList').style.display = 'block';
+    document.getElementById('pastEventList').style.display = 'none';
+    
+    // タイトルを更新
+    document.getElementById('selectedScheduleTitle').textContent = `${scheduleName} イベント`;
+    
+    // イベントリストコンテナを取得
+    const eventItemsContainer = document.getElementById('eventItems');
+    eventItemsContainer.innerHTML = '';
+    
+    // 選択した日程のイベントを取得
+    const scheduleEvents = window.scheduleData.scheduleEvents[scheduleName];
+    
+    // 将来のイベントを表示
+    if (scheduleEvents.future.length > 0) {
+        const futureHeader = document.createElement('div');
+        futureHeader.className = 'hierarchy-subheader';
+        futureHeader.textContent = '今後のイベント';
+        eventItemsContainer.appendChild(futureHeader);
+        
+        scheduleEvents.future.forEach(event => {
+            const eventItem = createEventItem(event);
+            eventItemsContainer.appendChild(eventItem);
+        });
+    }
+    
+    // 過去のイベントがある場合は「終了済みイベント」ボタンを追加
+    if (scheduleEvents.past.length > 0) {
+        const pastEventsButton = document.createElement('div');
+        pastEventsButton.className = 'hierarchy-item past-events-button';
+        pastEventsButton.innerHTML = `
+            <i class="fas fa-history"></i>
+            <span>終了済みイベント</span>
+            <span class="badge">${scheduleEvents.past.length}</span>
+        `;
+        
+        // 終了済みイベントボタンのクリックイベント
+        pastEventsButton.addEventListener('click', function() {
+            showPastEvents(scheduleName);
+        });
+        
+        eventItemsContainer.appendChild(pastEventsButton);
+    }
+}
+
+// 終了済みイベントを表示
+function showPastEvents(scheduleName) {
+    // イベントページを隠して終了済みイベントページを表示
+    document.getElementById('scheduleList').style.display = 'none';
+    document.getElementById('eventList').style.display = 'none';
+    document.getElementById('pastEventList').style.display = 'block';
+    
+    // タイトルを更新
+    document.getElementById('selectedEventsTitle').textContent = `${scheduleName} 終了済みイベント`;
+    
+    // 終了済みイベントリストコンテナを取得
+    const pastEventItemsContainer = document.getElementById('pastEventItems');
+    pastEventItemsContainer.innerHTML = '';
+    
+    // 選択した日程の過去イベントを取得
+    const pastEvents = window.scheduleData.scheduleEvents[scheduleName].past;
+    
+    // 過去イベントを表示
+    pastEvents.forEach(event => {
+        const eventItem = createEventItem(event);
+        pastEventItemsContainer.appendChild(eventItem);
+    });
+}
+
+// 日程リストを表示
+function showScheduleList() {
+    document.getElementById('scheduleList').style.display = 'block';
+    document.getElementById('eventList').style.display = 'none';
+    document.getElementById('pastEventList').style.display = 'none';
+}
+
+// イベントアイテムを作成
+function createEventItem(event) {
+    const eventItem = document.createElement('div');
+    eventItem.className = 'hierarchy-item event-item';
+    
+    // 過去イベントかどうかのクラスを追加
+    if (event.isPast) {
+        eventItem.classList.add('past-event');
+    }
+    
+    // 時間未定イベントかどうかのクラスを追加
+    if (event.isIncomplete) {
+        eventItem.classList.add('incomplete-event');
+    }
+    
+    // 日付をMM/DD形式に変換
+    const dateStr = formatDateMD(event.date);
+    
+    // アイコンとイベント情報を表示（新レイアウトに変更）
+    let itemContent = `
+        <i class="fas fa-map-marker-alt"></i>
+        <div class="event-content">
+            <div class="event-header">${dateStr}</div>
+            <div class="event-name">${event.venue} (${event.region})</div>
+        </div>
+    `;
+    
+    // 時間未定の場合は表示を変更
+    if (event.isIncomplete) {
+        itemContent += '<span class="event-status">【時間未定】</span>';
+    }
+    
+    eventItem.innerHTML = itemContent;
+    
+    // 時間未定でない場合のみクリックイベントを追加
+    if (!event.isIncomplete) {
+        eventItem.addEventListener('click', function() {
+            // イベントデータを含むダミーオプションを作成してapplyVenueSelectionを呼び出す
+            const dummyOption = document.createElement('option');
+            dummyOption.dataset.date = event.date;
+            dummyOption.dataset.region = event.region;
+            dummyOption.dataset.venue = event.venue;
+            dummyOption.dataset.openTime = event.openTime;
+            dummyOption.dataset.startTime = event.startTime;
+            dummyOption.dataset.endTime = event.endTime;
+            
+            // イベント選択を適用
+            applyVenueSelection(dummyOption);
+            
+            // 設定パネルを閉じる（オプション）
+            // closeSettingsPanel();
+        });
+    }
+    
+    return eventItem;
+}
+
+// イベントオプションを作成する関数
+function createEventOption(event) {
+    const option = document.createElement('option');
+    
+    // 日付 - 会場名（地域）の形式で表示
+    const dateStr = formatDateMD(event.date);
+    let optionText = `${dateStr} - ${event.venue}（${event.region}）`;
+    
+    // 時間未定の場合は表示を変更
+    if (event.isIncomplete) {
+        optionText += '【時間未定】';
+        option.disabled = true; // 選択不可に設定
+        option.classList.add('incomplete-event');
+    } else if (event.isPast) {
+        option.classList.add('past-event');
+    }
+    
+    option.value = optionText;
+    option.textContent = optionText;
+    
+    // データ属性にイベント情報を追加
+    option.dataset.date = event.date;
+    option.dataset.region = event.region;
+    option.dataset.venue = event.venue;
+    option.dataset.openTime = event.openTime;
+    option.dataset.startTime = event.startTime;
+    option.dataset.endTime = event.endTime;
+    
+    return option;
+}
+
+// MM/DD形式の日付文字列を生成する関数
+function formatDateMD(dateStr) {
+    const date = new Date(dateStr);
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${month}/${day}`;
 }
 
 // 選択された会場オプションを適用する共通関数

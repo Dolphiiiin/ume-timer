@@ -8,44 +8,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron&display=swap" rel="stylesheet">
-    <!-- 共通ベースCSS -->
-    <link rel="stylesheet" href="css/base.css">
-    <!-- 横向き専用CSS -->
-    <link rel="stylesheet" href="css/landscape.css">
-    <!-- 縦向き専用CSS -->
-    <link rel="stylesheet" href="css/portrait.css">
+    <!-- 統合したCSS -->
+    <link rel="stylesheet" href="src/style/styles.css">
     <!-- BulmaのCSSを読み込む -->
     <link rel="stylesheet" href="bulma/css/bulma.min.css">
     <!-- Font Awesome CDNを追加 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        /* ロゴコンテナのスタイル */
-        .logo-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 15px; /* 間隔を少し広げる */
-            height: 100%;
-        }
-        .logo-image {
-            max-width: 200px; /* サイズを2倍に */
-            height: auto;
-        }
-        
-        /* レスポンシブ対応 */
-        @media (max-width: 768px) {
-            .logo-image {
-                max-width: 160px; /* サイズを2倍に */
-            }
-        }
-        
-        @media (max-height: 500px) and (orientation: landscape) {
-            .logo-image {
-                max-width: 120px; /* サイズを2倍に */
-            }
-        }
-    </style>
+    <!-- jQuery の追加 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Select2 ライブラリの追加 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -89,8 +62,8 @@
 
                     <div class="logos-footer">
                         <div class="logo-container">
-                            <img src="maywadenki.png" alt="" class="logo-image">
-                            <img src="tsukuba.png" alt="" class="logo-image">
+                            <img src="src/image/maywadenki.png" alt="" class="logo-image">
+                            <img src="src/image/tsukuba.png" alt="" class="logo-image">
                         </div>
                     </div>
                 </div>
@@ -107,50 +80,91 @@
             <button class="close-settings" id="closeSettings"><i class="fas fa-times"></i></button>
             <div class="settings-title"><i class="fas fa-cog"></i> 時間設定</div>
             <div class="time-settings">
+                <!-- 会場選択は常に表示 -->
                 <div class="setting-group">
-                    <label for="eventTitle"><i class="fas fa-heading"></i> イベント名</label>
-                    <input type="text" id="eventTitle" class="event-title-input" placeholder="イベント名を入力してください">
-                </div>
-                <div class="setting-group">
-                    <label for="openTime"><i class="fas fa-door-open"></i> 開場時間</label>
-                    <input type="time" id="openTime" name="openTime">
-                </div>
-                <div class="setting-group">
-                    <label for="startTime"><i class="fas fa-play"></i> 開演時間</label>
-                    <input type="time" id="startTime" name="startTime">
-                </div>
-                <div class="setting-group">
-                    <label for="endTime"><i class="fas fa-flag-checkered"></i> 終演時間</label>
-                    <input type="time" id="endTime" name="endTime">
-                </div>
-                <!-- プリセットボタンエリアを追加 -->
-                <div class="setting-group">
-                    <label for="venue-select"><i class="fas fa-map-marker-alt"></i> 会場選択</label>
-                    <div class="search-container">
-                        <select id="venue-select" class="venue-select" style="width: 100%; padding: 8px;">
-                            <option value="">-- 会場を選択 --</option>
-                            <!-- CSVから動的に生成されます -->
-                        </select>
+                    <label><i class="fas fa-map-marker-alt"></i> 会場選択</label>
+                    <!-- 階層選択のコンテナ -->
+                    <div class="venue-hierarchy-container">
+                        <!-- 階層選択の各ページ -->
+                        <div class="hierarchy-page" id="scheduleList">
+                            <div class="hierarchy-header">
+                                <h3>日程選択</h3>
+                            </div>
+                            <div class="hierarchy-items" id="scheduleItems">
+                                <!-- 日程項目がJSで動的に生成されます -->
+                            </div>
+                        </div>
+                        
+                        <div class="hierarchy-page" id="eventList" style="display: none;">
+                            <div class="hierarchy-header">
+                                <button class="back-button" id="backToSchedule">
+                                    <i class="fas fa-arrow-left"></i> 戻る
+                                </button>
+                                <h3 id="selectedScheduleTitle">イベント選択</h3>
+                            </div>
+                            <div class="hierarchy-items" id="eventItems">
+                                <!-- イベント項目がJSで動的に生成されます -->
+                            </div>
+                        </div>
+                        
+                        <div class="hierarchy-page" id="pastEventList" style="display: none;">
+                            <div class="hierarchy-header">
+                                <button class="back-button" id="backToEvents">
+                                    <i class="fas fa-arrow-left"></i> 戻る
+                                </button>
+                                <h3 id="selectedEventsTitle">終了済みイベント</h3>
+                            </div>
+                            <div class="hierarchy-items" id="pastEventItems">
+                                <!-- 終了済みイベント項目がJSで動的に生成されます -->
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <!-- プリセット時間選択を追加 -->
-                <div class="setting-group">
-                    <label for="preset-select"><i class="fas fa-clock"></i> プリセット時間</label>
-                    <select id="preset-select" class="preset-select">
-                        <option value="">-- プリセットを選択 --</option>
-                        <option value="preset1" data-start="16:00" data-open="15:30">開演16:00～（開場15:30～、終演17:30）</option>
-                        <option value="preset2" data-start="17:00" data-open="16:30">開演17:00～（開場16:30～、終演18:30）</option>
-                        <option value="preset3" data-start="18:00" data-open="17:30">開演18:00～（開場17:30～、終演19:30）</option>
-                        <option value="preset4" data-start="19:00" data-open="18:30">開演19:00～（開場18:30～、終演20:30）</option>
+                    
+                    <!-- 従来のセレクトボックスも残しておきます（非表示） -->
+                    <select id="venue-select" class="venue-select" style="display: none;">
+                        <option value="">-- 会場を選択 --</option>
+                        <!-- CSVから動的に生成されます -->
                     </select>
                 </div>
-            </div>
-            <div class="button-group">
-                <!-- 時間設定ボタンを削除して、自動設定の説明を追加 -->
-                <div class="auto-setting-info">
-                    <i class="fas fa-info-circle"></i> 時間入力後、自動的に設定されます
-                </div>
-                <!-- <button id="reloadPresetBtn" class="custom-button"><i class="fas fa-sync-alt"></i> プリセット再読み込み</button> -->
+
+                <!-- マニュアル設定は折りたたみ -->
+                <details class="manual-settings-container">
+                    <summary class="manual-settings-title">
+                        <i class="fas fa-tools"></i> マニュアル設定
+                    </summary>
+                    <div class="manual-settings-content">
+                        <div class="setting-group">
+                            <label for="eventTitle"><i class="fas fa-heading"></i> イベント名</label>
+                            <input type="text" id="eventTitle" class="event-title-input" placeholder="イベント名を入力してください">
+                        </div>
+                        <div class="setting-group">
+                            <label for="openTime"><i class="fas fa-door-open"></i> 開場時間</label>
+                            <input type="time" id="openTime" name="openTime">
+                        </div>
+                        <div class="setting-group">
+                            <label for="startTime"><i class="fas fa-play"></i> 開演時間</label>
+                            <input type="time" id="startTime" name="startTime">
+                        </div>
+                        <div class="setting-group">
+                            <label for="endTime"><i class="fas fa-flag-checkered"></i> 終演時間</label>
+                            <input type="time" id="endTime" name="endTime">
+                        </div>
+                        <!-- プリセット時間選択 -->
+                        <div class="setting-group">
+                            <label for="preset-select"><i class="fas fa-clock"></i> プリセット時間</label>
+                            <select id="preset-select" class="preset-select">
+                                <option value="">-- プリセットを選択 --</option>
+                                <option value="preset1" data-start="16:00" data-open="15:30">開演16:00～（開場15:30～、終演17:30）</option>
+                                <option value="preset2" data-start="17:00" data-open="16:30">開演17:00～（開場16:30～、終演18:30）</option>
+                                <option value="preset3" data-start="18:00" data-open="17:30">開演18:00～（開場17:30～、終演19:30）</option>
+                                <option value="preset4" data-start="19:00" data-open="18:30">開演19:00～（開場18:30～、終演20:30）</option>
+                            </select>
+                        </div>
+                        <div class="auto-setting-info">
+                            <i class="fas fa-info-circle"></i> 時間入力後、自動的に設定されます
+                        </div>
+                    </div>
+                </details>
             </div>
             <div class="status-container">
                 <div class="status" id="status"><i class="fas fa-info-circle"></i> 時間を設定してください</div>
@@ -162,6 +176,6 @@
         </div>
     </div>
     <!-- JavaScriptモジュールの読み込み -->
-    <script type="module" src="core.js"></script>
+    <script type="module" src="src/script/core.js"></script>
 </body>
 </html>

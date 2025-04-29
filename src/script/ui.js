@@ -4,6 +4,9 @@
 
 import { formatTimeForInput, calculateEndTime } from './time.js';
 
+// 設定画面の自動クローズタイマーを保持する変数
+let settingsAutoCloseTimer = null;
+
 // プリセットを選択したときの処理を関数化
 function applyPreset(startTimeStr, openTimeStr) {
     const openTimeInput = document.getElementById('openTime');
@@ -38,8 +41,16 @@ function applyPreset(startTimeStr, openTimeStr) {
 // フルスクリーン切り替え機能
 function setupFullscreenToggle() {
     // フルスクリーンボタン
-    document.getElementById('fullScreenBtn').addEventListener('click', toggleFullscreen);
-    document.getElementById('toggleFullscreen').addEventListener('click', toggleFullscreen);
+    document.getElementById('fullScreenBtn').addEventListener('click', function() {
+        toggleFullscreen();
+        // フルスクリーン切り替え時に設定画面も閉じる
+        closeSettingsPanel();
+    });
+    document.getElementById('toggleFullscreen').addEventListener('click', function() {
+        toggleFullscreen();
+        // フルスクリーン切り替え時に設定画面も閉じる
+        closeSettingsPanel();
+    });
     
     // フルスクリーン状態変更イベントリスナー
     document.addEventListener('fullscreenchange', function() {
@@ -71,6 +82,9 @@ function setupSettingsPanel() {
 
     // 設定パネルを開く
     toggleButton.addEventListener('click', function() {
+        // 念のため、設定パネルを開く前に既存のタイマーをクリア
+        clearSettingsAutoCloseTimer();
+        
         settingsPanel.classList.remove('collapsed');
         settingsOverlay.classList.remove('collapsed');
         toggleButton.textContent = '≪';
@@ -90,6 +104,9 @@ function setupSettingsPanel() {
             fullscreenBtn.style.visibility = 'hidden';
             fullscreenBtn.style.pointerEvents = 'none';
         }
+        
+        // 自動クローズタイマーを設定（1分後に自動的に閉じる）
+        startSettingsAutoCloseTimer();
     });
 
     // 設定パネルを閉じる（×ボタン）
@@ -97,6 +114,42 @@ function setupSettingsPanel() {
 
     // 背景クリックでも閉じる
     settingsOverlay.addEventListener('click', closeSettingsPanel);
+    
+    // 設定パネル内のユーザー操作を検知して自動クローズタイマーをリセット
+    settingsPanel.addEventListener('click', resetSettingsAutoCloseTimer);
+    settingsPanel.addEventListener('input', resetSettingsAutoCloseTimer);
+    settingsPanel.addEventListener('change', resetSettingsAutoCloseTimer);
+    settingsPanel.addEventListener('scroll', resetSettingsAutoCloseTimer);
+}
+
+// 設定パネルの自動クローズタイマーを開始
+function startSettingsAutoCloseTimer() {
+    // 既存のタイマーがあればクリア
+    clearSettingsAutoCloseTimer();
+    
+    // 1分(60000ミリ秒)後に自動的に設定パネルを閉じる
+    settingsAutoCloseTimer = setTimeout(function() {
+        console.log('1分間操作がなかったため、設定パネルを自動的に閉じます');
+        closeSettingsPanel();
+    }, 60000);
+    
+    console.log('設定パネルの自動クローズタイマーを開始しました');
+}
+
+// 設定パネルの自動クローズタイマーをリセット
+function resetSettingsAutoCloseTimer() {
+    // 既存のタイマーをクリアして新しいタイマーを開始
+    clearSettingsAutoCloseTimer();
+    startSettingsAutoCloseTimer();
+}
+
+// 設定パネルの自動クローズタイマーをクリア
+function clearSettingsAutoCloseTimer() {
+    if (settingsAutoCloseTimer !== null) {
+        clearTimeout(settingsAutoCloseTimer);
+        settingsAutoCloseTimer = null;
+        console.log('設定パネルの自動クローズタイマーをクリアしました');
+    }
 }
 
 // 設定パネルを閉じる
@@ -111,6 +164,9 @@ function closeSettingsPanel() {
     
     // メインコンテンツを元の位置に戻す
     document.querySelector('.main-container').classList.remove('with-settings');
+    
+    // 自動クローズタイマーをクリア
+    clearSettingsAutoCloseTimer();
     
     // トグルボタンとフルスクリーンボタンを表示する
     setTimeout(function() {

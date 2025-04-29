@@ -1,0 +1,1073 @@
+/* ページ全体のボックスサイズを境界ボックスに統一 */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* 横スクロールを抑制 */
+body {
+    overflow-x: hidden;
+    /* 基本フォントを等幅フォントに設定 */
+    font-family: 'Share Tech Mono', 'Orbitron', monospace;
+    /* 文字間隔を狭く設定 */
+    letter-spacing: -0.05em;
+}
+
+/* CSS変数を定義 */
+:root {
+    --bg-color: #121212;
+    --primary-color: #ffffff;
+    --secondary-color: #11ffdf;
+    --text-color: #e0e0e0;
+    --error-color: #cf6679;
+    --panel-color: #1e1e1e;
+    --border-color: #333333;
+    --active-scale: 1.0; /* アクティブなタイマーの拡大率 */
+    
+    /* フォントサイズ倍率変数 */
+    --current-time-scale: 1; /* 現在時刻のフォントサイズ倍率 */
+    --countdown-scale: 0.8;    /* カウントダウンのフォントサイズ倍率 */
+    --active-countdown-scale: 0.5; /* アクティブなカウントダウンのフォントサイズ倍率 */
+    --label-scale: 0.6;        /* ラベル部分のフォントサイズ倍率 */
+    --header-scale: 0.3;       /* ヘッダーのフォントサイズ倍率 */
+
+    /* 縦向き時の現在時刻用フォントサイズ変数 */
+    --current-portrait-font-min: 3rem;    /* 縦向き時の現在時刻最小フォントサイズ */
+    --current-portrait-font-vw: 12vw;     /* 縦向き時の現在時刻ビューポート依存フォントサイズ */
+    --current-portrait-font-max: 5rem;    /* 縦向き時の現在時刻最大フォントサイズ */
+
+    /* カウントダウン用フォントサイズ変数 */
+    --countdown-font-min: 4rem;               /* カウントダウン最小フォントサイズ */
+    --countdown-font-vw: 18vw;               /* カウントダウン幅依存フォントサイズ */
+    --countdown-font-max: 8rem;               /* カウントダウン最大フォントサイズ */
+    --active-countdown-font-min: 5rem;       /* アクティブ時最小フォントサイズ */
+    --active-countdown-font-vw: 22vw;        /* アクティブ時幅依存フォントサイズ */
+    --active-countdown-font-max: 11rem;      /* アクティブ時最大フォントサイズ */
+    
+    /* グリッドのスペース設定 */
+    --horizontal-gap: 0.3rem;   /* 中央の横方向の余白 */
+    --vertical-gap: 0.5rem;   /* 縦方向の余白 */
+    
+    /* 縦横比に応じたグリッド調整 */
+    --grid-height-adjust: 1.0; /* 高さ調整係数 */
+}
+
+/* 基本スタイル */
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    min-height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Google Fontsの等幅フォント設定 */
+.current-time, 
+.countdown-combined .time-value,
+.seconds {
+    /* 等幅フォント設定 */
+    font-family: 'Share Tech Mono', 'Orbitron', monospace;
+    letter-spacing: -0.05em; /* カーニングを狭く設定 */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-feature-settings: "tnum";
+    font-feature-settings: "tnum";
+    white-space: pre;
+}
+
+/* Bulmaの.containerを上書きするため、より強いセレクタを使用 */
+body .container,
+div.container,
+.container {
+    position: relative;
+    width: 100% !important; /* !importantで上書き防止 */
+    max-width: 100% !important; /* Bulmaのmax-widthも上書き */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: visible;
+    /* Bulmaのデフォルトマージンをリセット */
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.main-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    width: 100%;
+    max-width: 99vw;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* グリッドレイアウト */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
+    column-gap: var(--horizontal-gap);
+    row-gap: var(--vertical-gap);
+    width: 100%;
+    height: calc(100% * var(--grid-height-adjust));
+    align-items: center;
+    max-height: calc(100vh - 80px);
+    overflow: visible;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    max-width: 99vw;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.grid-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+/* ヘッダー */
+.header {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    width: 100%;
+}
+
+/* 編集可能なヘッダー要素のスタイル */
+.editable-header {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: bold;
+    color: var(--primary-color);
+    text-align: center;
+    margin: 0;
+    padding: 0.5rem;
+    width: 100%;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+    overflow-wrap: break-word;
+    word-break: keep-all;
+    line-height: 1.2;
+}
+
+.open-countdown {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+}
+
+/* 現在時刻 */
+.current-time-container {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.start-countdown {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+}
+
+/* 終演カウントダウン */
+.end-countdown {
+    grid-column: 2 / 3;
+    grid-row: 3 / 4;
+}
+
+/* 現在時刻ラベルのコンテナ */
+.time-label-container {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+/* 現在時刻ラベル */
+.current-time-container .time-label {
+    color: var(--secondary-color);
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+/* フッターロゴ */
+.logos-footer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* ロゴコンテナのスタイル */
+.logo-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: min(600px, 90vw);
+}
+
+.logo-image {
+    width: clamp(120px, 20vw, 200px);
+    height: auto;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+/* 現在時刻 */
+.current-time {
+    font-size: calc(min(14vw, 7rem));
+    font-weight: bold;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: flex-end;
+    margin-top: 0;
+    line-height: 1.1;
+}
+
+.countdown-area {
+    width: 100%;
+    position: relative;
+}
+
+.countdown-combined {
+    font-size: clamp(
+        calc(var(--countdown-font-min) * var(--countdown-scale)),
+        calc(var(--countdown-font-vw) * var(--countdown-scale)),
+        calc(var(--countdown-font-max) * var(--countdown-scale))
+    );
+    font-weight: bold;
+    text-align: center;
+    color: var(--primary-color);
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.countdown-combined.active {
+    font-size: clamp(
+        calc(var(--active-countdown-font-min) * var(--active-countdown-scale)),
+        calc(var(--active-countdown-font-vw) * var(--active-countdown-scale)),
+        calc(var(--active-countdown-font-max) * var(--active-countdown-scale))
+    );
+    transform: scale(var(--active-scale));
+    z-index: 1;
+    color: var(--secondary-color);
+}
+
+.time-label {
+    font-size: calc(min(9vw, 4.5rem) * var(--label-scale));
+    display: block;
+    margin-bottom: 0.5rem;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+}
+
+.time-value {
+    display: flex;
+    align-items: flex-end;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+/* 秒と日付のスタイル調整 */
+.seconds {
+    font-size: 50%;
+    opacity: 0.8;
+    align-self: flex-end;
+}
+
+.date-small {
+    font-size: 50%;
+    opacity: 0.8;
+    align-self: flex-end;
+    transform: translateY(-0.5rem);
+}
+
+/* 折り畳みボタンとフルスクリーンボタン */
+.toggle-settings, .toggle-fullscreen {
+    position: fixed;
+    z-index: 1000;
+    background-color: var(--panel-color);
+    color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.toggle-settings {
+    top: 1rem;
+    right: 1rem;
+}
+
+.toggle-fullscreen {
+    top: 5rem;
+    right: 1rem;
+}
+
+.toggle-settings:hover, .toggle-fullscreen:hover {
+    background-color: var(--secondary-color);
+    color: var(--panel-color);
+}
+
+/* 設定パネル関連 */
+.settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    max-width: 80vw;
+    height: 100vh;
+    background-color: var(--panel-color);
+    border-left: 1px solid var(--border-color);
+    padding: 1rem;
+    z-index: 999;
+    overflow-y: auto;
+    transition: transform 0.3s ease;
+}
+
+.settings-panel.collapsed {
+    transform: translateX(100%);
+}
+
+.settings-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--secondary-color);
+}
+
+.time-settings {
+    margin-bottom: 1rem;
+}
+
+.setting-group {
+    margin-bottom: 1rem;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.setting-group input, .setting-group select {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* プリセットセレクト */
+.preset-select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background-color: var(--panel-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.preset-select:hover {
+    border-color: var(--secondary-color);
+}
+
+.preset-select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(17, 255, 223, 0.2);
+}
+
+.preset-select option {
+    background-color: var(--panel-color);
+    color: var(--text-color);
+    padding: 8px;
+}
+
+/* 会場選択コンポーネント */
+.venue-select {
+    font-family: 'Share Tech Mono', 'Orbitron', monospace;
+    background-color: var(--panel-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.venue-select:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(17, 255, 223, 0.2);
+    outline: none;
+}
+
+/* optgroupのスタイル */
+.venue-select optgroup {
+    font-weight: bold;
+    color: var(--secondary-color);
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 5px;
+    margin-top: 5px;
+}
+
+/* 終了済みイベントグループのスタイル */
+.venue-select optgroup.past-events-group {
+    color: #999;
+    font-style: italic;
+    margin-left: 15px;
+    border-left: 2px solid rgba(150, 150, 150, 0.3);
+    padding-left: 10px;
+}
+
+/* イベントオプションのスタイル */
+.venue-select option {
+    background-color: var(--panel-color);
+    color: var(--text-color);
+    padding: 5px;
+}
+
+.venue-select option.incomplete-event {
+    color: #888;
+    font-style: italic;
+}
+
+.venue-select option.past-event {
+    color: #777;
+}
+
+.venue-select option:hover:not([disabled]) {
+    background-color: rgba(17, 255, 223, 0.1);
+}
+
+/* カスタムボタン */
+.custom-button {
+    margin-bottom: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--secondary-color);
+    color: var(--bg-color);
+    border: 2px solid var(--secondary-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.custom-button:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--bg-color);
+}
+
+/* マニュアル設定の折りたたみセクション */
+.manual-settings-container {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.manual-settings-title {
+    padding: 0.7rem 1rem;
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--secondary-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.manual-settings-title::after {
+    content: '▼';
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.manual-settings-container[open] .manual-settings-title::after {
+    transform: rotate(180deg);
+}
+
+.manual-settings-content {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.auto-setting-info {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* 会場選択の階層構造 */
+.venue-hierarchy-container {
+    background-color: var(--panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    max-height: 300px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.hierarchy-page {
+    width: 100%;
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease-out;
+}
+
+.hierarchy-header {
+    display: flex;
+    align-items: center;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.hierarchy-header h3 {
+    color: var(--secondary-color);
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.back-button {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.back-button:hover {
+    color: var(--secondary-color);
+}
+
+.hierarchy-items {
+    padding: 0.5rem;
+}
+
+.hierarchy-item {
+    padding: 0.7rem 1rem;
+    margin-bottom: 0.3rem;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    color: var(--text-color);
+}
+
+.hierarchy-item:hover {
+    background-color: rgba(17, 255, 223, 0.1);
+}
+
+.hierarchy-item.selected {
+    background-color: rgba(17, 255, 223, 0.2);
+    border-left: 3px solid var(--secondary-color);
+}
+
+.hierarchy-item.past-event {
+    color: #777;
+}
+
+.hierarchy-item.incomplete-event {
+    color: #888;
+    font-style: italic;
+    cursor: not-allowed;
+}
+
+.hierarchy-item i {
+    margin-right: 0.8rem;
+    color: var(--secondary-color);
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.hierarchy-item.past-event i {
+    color: #777;
+}
+
+.event-date {
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.hierarchy-subheader {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    opacity: 0.8;
+    padding: 0.5rem 0.7rem 0.3rem;
+    margin-top: 0.3rem;
+    border-bottom: 1px solid rgba(17, 255, 223, 0.1);
+}
+
+.badge {
+    background-color: rgba(17, 255, 223, 0.1);
+    color: var(--secondary-color);
+    border-radius: 12px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+.hierarchy-item.past-event .badge,
+.hierarchy-item.past-events-button .badge {
+    background-color: rgba(150, 150, 150, 0.1);
+    color: #999;
+}
+
+.event-venue {
+    flex-grow: 1;
+    overflow: visible;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+    max-width: 78%;
+}
+
+.event-status {
+    color: #888;
+    font-style: italic;
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.past-events-button {
+    border: 1px dashed #444;
+    margin-top: 1rem;
+    justify-content: flex-start;
+}
+
+.past-events-button:hover {
+    border-color: #666;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.event-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+    max-width: 78%;
+}
+
+.event-header {
+    font-weight: bold;
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+}
+
+.event-name {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+    overflow: visible;
+}
+
+/* 今日のイベントセクション */
+.hierarchy-today-section {
+    margin-bottom: 1rem;
+}
+
+.today-header {
+    background-color: rgba(17, 255, 223, 0.15);
+    border-left: 3px solid var(--secondary-color);
+    padding: 0.5rem 0.7rem;
+    font-weight: bold;
+}
+
+.today-header i {
+    color: var(--secondary-color);
+    margin-right: 0.5rem;
+}
+
+.hierarchy-item.today-event {
+    border-left: 3px solid var(--secondary-color);
+    background-color: rgba(17, 255, 223, 0.08);
+}
+
+.hierarchy-item.today-event:hover {
+    background-color: rgba(17, 255, 223, 0.15);
+}
+
+.hierarchy-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 0.8rem 0;
+}
+
+.today-events-group {
+    background-color: rgba(17, 255, 223, 0.1);
+    font-weight: bold;
+    color: var(--secondary-color);
+    border-left: 3px solid var(--secondary-color);
+}
+
+option.today-event-option {
+    font-weight: bold;
+}
+
+/* 設定パネルの閉じるボタン、オーバーレイ */
+.close-settings {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background-color: transparent;
+    color: var(--secondary-color);
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.close-settings:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.041);
+    z-index: 998;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.settings-overlay.collapsed {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.main-container.with-settings {
+    transform: translateX(-400px);
+    transition: transform 0.3s ease;
+}
+
+.main-container.with-settings .toggle-settings,
+.main-container.with-settings .toggle-fullscreen {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.main-container {
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+}
+
+/* レスポンシブスタイル - 横向き（ランドスケープ） */
+@media (orientation: landscape) {
+    :root {
+        --landscape-current-time-scale: 0.9;
+        --landscape-countdown-scale: 0.6;
+        --landscape-active-countdown-scale: 0.6;
+        --landscape-label-scale: 0.9;
+        --landscape-header-scale: var(--header-scale);
+        --border-color: rgba(204, 204, 204, 0.7);
+        --border-width: 1px;
+        --border-style: solid;
+    }
+    
+    .time-display {
+        overflow-x: hidden;
+    }
+    
+    .countdown-combined {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    .container,
+    .main-container,
+    .time-display,
+    .grid-container {
+        height: auto;
+        max-height: 100vh;
+    }
+    
+    .grid-container {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        position: relative;
+        align-content: center;
+    }
+    
+    .grid-container::after {
+        content: "";
+        position: absolute;
+        top: 5%;
+        bottom: 5%;
+        left: 50%;
+        width: var(--border-width);
+        background-color: var(--border-color);
+        transform: translateX(-50%);
+    }
+    
+    .grid-container > .grid-item {
+        min-width: 0;
+        overflow: hidden;
+    }
+}
+
+/* スマートフォン横向き対応（max-height: 500px） */
+@media (max-height: 500px) and (orientation: landscape) {
+    :root {
+        --active-scale: 1.1;
+        --grid-height-adjust: 0.85;
+    }
+    
+    .current-time {
+        font-size: calc(min(12vw, 6rem) * var(--landscape-current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(10.5vw, 5.25rem) * var(--landscape-countdown-scale));
+        line-height: 1.2;
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(13.5vw, 6.75rem) * var(--landscape-active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(4.5vw, 2.25rem) * var(--landscape-label-scale));
+        margin-bottom: 0.2rem;
+    }
+    
+    .editable-header {
+        font-size: calc(min(12vw, 6rem) * var(--landscape-header-scale));
+        padding: 0.2rem;
+    }
+    
+    .spacer p {
+        font-size: calc(min(4vw, 2rem) * var(--landscape-label-scale));
+    }
+    
+    .grid-item {
+        padding: 0.3rem;
+    }
+    
+    .logo-image {
+        max-width: 120px;
+    }
+}
+
+/* 特に小さい画面（max-height: 375px）横向き対応 */
+@media (max-height: 375px) and (orientation: landscape) {
+    :root {
+        --grid-height-adjust: 0.75;
+    }
+    
+    .current-time {
+        font-size: calc(min(10vw, 5rem) * var(--landscape-current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(8vw, 4rem) * var(--landscape-countdown-scale));
+        line-height: 1.1;
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(9vw, 4.5rem) * var(--landscape-active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(3.5vw, 1.75rem) * var(--landscape-label-scale));
+        margin-bottom: 0.1rem;
+    }
+    
+    .editable-header {
+        font-size: calc(min(9vw, 4.5rem) * var(--landscape-header-scale));
+        padding: 0.1rem;
+    }
+    
+    .spacer p {
+        font-size: calc(min(3.25vw, 1.6rem) * var(--landscape-label-scale));
+    }
+    
+    .grid-item {
+        padding: 0.2rem;
+    }
+}
+
+/* 縦画面（ポートレート）専用スタイル */
+@media (orientation: portrait) {
+    :root {
+        --portrait-current-time-scale: 1.0;
+        --portrait-countdown-scale: 0.6;
+        --portrait-active-countdown-scale: 0.8;
+        --portrait-label-scale: 1.5;
+        --portrait-header-scale: 0.6;
+        --grid-height-adjust: 0.95;
+        --border-color: rgba(204, 204, 204, 0.7);
+        --border-width: 1px;
+        --border-style: solid;
+    }
+    
+    #spacer-text {
+        display: none;
+    }
+    
+    .grid-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(6, auto);
+        column-gap: 0;
+        row-gap: 0.2rem;
+        max-height: none;
+        height: auto;
+        overflow: visible;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        padding-top: 1rem;
+        padding-top: env(safe-area-inset-top);
+    }
+    
+    .header {
+        grid-column: 1;
+        grid-row: 1;
+        margin: 0;
+    }
+    
+    .current-time-container {
+        grid-column: 1;
+        grid-row: 2;
+        margin: 0;
+        position: relative;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .current-time-container::after {
+        content: "";
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        bottom: 0;
+        height: var(--border-width);
+        background-color: var(--border-color);
+    }
+    
+    .spacer { grid-column: 1; grid-row: 3; margin-top: 0.5rem; }
+    .open-countdown { grid-column: 1; grid-row: 4; }
+    .start-countdown { grid-column: 1; grid-row: 5; }
+    .end-countdown { grid-column: 1; grid-row: 6; margin-bottom: 1rem; padding-bottom: 1rem; }
+    
+    .time-display { 
+        height: auto; 
+        justify-content: center; 
+        align-items: center; 
+        padding-top: 1.5rem; 
+    }
+    
+    .current-time {
+        font-size: calc(min(16vw, 7rem) * var(--portrait-current-time-scale));
+    }
+    
+    .countdown-combined {
+        font-size: calc(min(14vw, 8rem) * var(--portrait-countdown-scale));
+        line-height: 1.3;
+    }
+    
+    .countdown-combined.active {
+        font-size: calc(min(18vw, 9rem) * var(--portrait-active-countdown-scale));
+    }
+    
+    .time-label {
+        font-size: calc(min(6vw, 3rem) * var(--portrait-label-scale));
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        margin-bottom: 0.2rem;
+    }
+    
+    .editable-header {
+        font-size: calc(min(12vw, 6rem) * var(--portrait-header-scale));
+    }
+    
+    .spacer p {
+        font-size: calc(min(6vw, 3rem) * var(--portrait-label-scale));
+    }
+    
+    .logos-footer {
+        grid-column: 1;
+        grid-row: 7;
+        margin-top: 0;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .logo-container {
+        gap: 1.5rem;
+        flex-direction: row;
+    }
+    
+    .logo-image {
+        max-width: 160px;
+        width: 40vw;
+    }
+}
