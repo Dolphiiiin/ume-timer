@@ -2,13 +2,17 @@
 @media (orientation: portrait) {
     /* 縦向き用フォントスケール変数定義 */
     :root {
-        --portrait-current-time-scale: 1.5;
+        --portrait-current-time-scale: 1.0;
         --portrait-countdown-scale: 0.6;
         --portrait-active-countdown-scale: 0.8;
         --portrait-label-scale: 1.5;
         --portrait-header-scale: 0.6;
         /* グリッド高さ調整係数 */
         --grid-height-adjust: 0.95;
+        /* 境界線用の変数 */
+        --border-color: rgba(204, 204, 204, 0.7);
+        --border-width: 1px;
+        --border-style: solid;
     }
 
     
@@ -40,6 +44,20 @@
         grid-column: 1;
         grid-row: 2;
         margin: 0; /* 上下余白を削除 */
+        /* 現在時刻の下に境界線を追加 - 統一したスタイルに変更 */
+        position: relative;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    /* 下部の境界線を疑似要素で追加 */
+    .current-time-container::after {
+        content: "";
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        bottom: 0;
+        height: var(--border-width);
+        background-color: var(--border-color);
     }
     .spacer { grid-column: 1; grid-row: 3; margin-top: 0.5rem; }
     .open-countdown { grid-column: 1; grid-row: 4; }
@@ -75,6 +93,25 @@
     .spacer p {
         /* 縦向き専用空白テキストスケール適用、サイズ上限を増加 */
         font-size: calc(min(6vw, 3rem) * var(--portrait-label-scale));
+    }
+
+    /* ロゴフッターの配置調整 */
+    .logos-footer {
+        grid-column: 1;
+        grid-row: 7;  /* 終演時間の次の行に配置 */
+        margin-top: 0;  /* 上部に余白を追加 */
+        padding-bottom: env(safe-area-inset-bottom);  /* セーフエリア対応 */
+    }
+
+    /* ロゴサイズの調整 */
+    .logo-container {
+        gap: 1.5rem;  /* ロゴ間の間隔を調整 */
+        flex-direction: row;
+    }
+
+    .logo-image {
+        max-width: 160px;  /* 縦向き時のロゴサイズ */
+        width: 40vw;  /* ビューポート幅に応じて調整 */
     }
 }
 

@@ -1,13 +1,4 @@
-// フルスクリーン
-document.getElementById('fullScreenBtn').addEventListener('click', function() {
-    if (document.fullscreenElement) {
-        document.exitFullscreen();
-    } else {
-        document.documentElement.requestFullscreen();
-    }
-});
-
-// 新しいフルスクリーンボタンの処理を追加
+// フルスクリーンボタンの処理を統一
 document.getElementById('toggleFullscreen').addEventListener('click', function() {
     if (document.fullscreenElement) {
         document.exitFullscreen();
@@ -16,10 +7,16 @@ document.getElementById('toggleFullscreen').addEventListener('click', function()
     }
 });
 
-// フルスクリーン状態変更イベントリスナーを追加（コードは残しておくがアイコン変更はしない）
+// フルスクリーン状態変更イベントリスナー
 document.addEventListener('fullscreenchange', function() {
-    // フルスクリーン状態のアイコン切り替えは行わないように変更
-    // 一貫したインターフェースのためにアイコンは常に同じ状態を保持
+    const fullscreenBtn = document.getElementById('toggleFullscreen');
+    if (fullscreenBtn) {
+        if (document.fullscreenElement) {
+            fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i>';  // 縮小アイコン
+        } else {
+            fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i>';    // 拡大アイコン
+        }
+    }
 });
 
 // グローバル変数
@@ -55,33 +52,8 @@ presetBtns.forEach(btn => {
         
         // 反復処理の確認ダイアログを表示
         if (confirm('反復処理を続行しますか？')) {
-            // 開場時間と開演時間をセット
-            openTimeInput.value = openTimeStr;
-            startTimeInput.value = startTimeStr;
-            
-            // 終演時間を計算（開演時間 + 1.5時間）
-            const [startHours, startMinutes] = startTimeStr.split(':').map(Number);
-            let endHours = startHours;
-            let endMinutes = startMinutes + EVENT_DURATION;
-            
-            // 分が60を超える場合は時間を調整
-            if (endMinutes >= 60) {
-                endHours += Math.floor(endMinutes / 60);
-                endMinutes = endMinutes % 60;
-            }
-            
-            // 24時間を超える場合は調整
-            if (endHours >= 24) {
-                endHours = endHours % 24;
-            }
-            
-            // 終演時間をフォーマット
-            const formattedEndHours = endHours.toString().padStart(2, '0');
-            const formattedEndMinutes = endMinutes.toString().padStart(2, '0');
-            endTimeInput.value = `${formattedEndHours}:${formattedEndMinutes}`;
-            
-            // ステータス更新
-            statusElem.textContent = `プリセット: 開演${startTimeStr}～（開場${openTimeStr}～）を設定しました。時間設定ボタンを押してタイマーをスタートしてください。`;
+            // プリセットを適用
+            applyPreset(startTimeStr, openTimeStr);
         }
     });
 });
@@ -89,7 +61,17 @@ presetBtns.forEach(btn => {
 // 現在時刻を表示する関数
 function updateCurrentTime() {
     const now = new Date();
-    currentTimeElem.innerHTML = formatTime(now, true);
+    // 現在時刻に日付情報を追加
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 月は0始まりなので+1
+    const day = now.getDate();
+    const formattedDate = `<span class="date-small">${padZero(month)}/${padZero(day)}</span>`;
+    
+    // 現在時刻の表示を更新（日付を含める）- MM/DD部分を秒数と同じスタイルにするが、フォントサイズを小さく
+    currentTimeElem.innerHTML = `${formattedDate}${formatTime(now, true)}`;
+
+    // イベント日付情報を更新（常に呼び出す）
+    updateEventDateInfo();
 
     // カウントダウン表示を更新
     if (startTime) {
@@ -226,7 +208,36 @@ function startCountdown() {
     // カウントダウンは updateCurrentTime 関数に統合したので、
     // 単に1秒ごとに更新するだけにします
     countdownInterval = setInterval(updateCurrentTime, 1000);
-}// 時間を表示用にフォーマットする関数
+}
+
+// イベント日付情報を表示する関数
+function updateEventDateInfo() {
+    // イベント日付要素を取得
+    const eventDateElement = document.getElementById('eventDate');
+    if (!eventDateElement) return; // 要素がなければ何もしない
+    
+    // 開演日時が設定されている場合、その日付を表示
+    if (startTime) {
+        const year = startTime.getFullYear();
+        const month = startTime.getMonth() + 1;
+        const day = startTime.getDate();
+        const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][startTime.getDay()];
+        
+        // 日付を表示（年月日と曜日）
+        eventDateElement.textContent = `${year}年${padZero(month)}月${padZero(day)}日(${dayOfWeek})`;
+    } else {
+        // 開演日時が設定されていない場合は現在の日付を表示
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const day = now.getDate();
+        const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][now.getDay()];
+        
+        eventDateElement.textContent = `${year}年${padZero(month)}月${padZero(day)}日(${dayOfWeek})`;
+    }
+}
+
+// 時間を表示用にフォーマットする関数
 function formatTime(date, includeSeconds = false) {
     const hours = padZero(date.getHours());
     const minutes = padZero(date.getMinutes());
@@ -269,19 +280,8 @@ function formatTimeDifference(start, end) {
 function padZero(num) {
     return num.toString().padStart(2, '0');
 }        // フォントサイズ最適化関数の実行（CSSで制御するため無効化）
-/*
-adjustFontSizes();
-
-// ウィンドウリサイズ時の再調整（無効化）
-window.addEventListener('resize', debounce(adjustFontSizes, 200));
-
-// 画面の向き変更時の再調整（無効化）
-window.addEventListener('orientationchange', function() {
-    setTimeout(adjustFontSizes, 200);
-});
-*/
-
 // フォントサイズを画面サイズに最適化する関数（CSSで制御するため無効化）
+
 /*
 function adjustFontSizes() {
     const timeDisplay = document.querySelector('.time-display');
@@ -396,7 +396,45 @@ function loadSettings() {
 // Date オブジェクトを input[type="time"] 用にフォーマットする関数
 function formatTimeForInput(date) {
     return `${padZero(date.getHours())}:${padZero(date.getMinutes())}`;
-}        // 初期化関数
+}        
+
+// 開演時間から終演時間を計算する関数
+function calculateEndTime(startTimeStr) {
+    const [startHours, startMinutes] = startTimeStr.split(':').map(Number);
+    let endHours = startHours;
+    let endMinutes = startMinutes + EVENT_DURATION;
+    
+    // 分が60を超える場合は時間を調整
+    if (endMinutes >= 60) {
+        endHours += Math.floor(endMinutes / 60);
+        endMinutes = endMinutes % 60;
+    }
+    
+    // 24時間を超える場合は調整
+    if (endHours >= 24) {
+        endHours = endHours % 24;
+    }
+    
+    // 終演時間をフォーマット
+    const formattedEndHours = endHours.toString().padStart(2, '0');
+    const formattedEndMinutes = endMinutes.toString().padStart(2, '0');
+    return `${formattedEndHours}:${formattedEndMinutes}`;
+}
+
+// プリセットを選択したときの処理を関数化
+function applyPreset(startTimeStr, openTimeStr) {
+    // 開場時間と開演時間をセット
+    openTimeInput.value = openTimeStr;
+    startTimeInput.value = startTimeStr;
+    
+    // 終演時間を計算して設定
+    endTimeInput.value = calculateEndTime(startTimeStr);
+    
+    // ステータス更新
+    statusElem.textContent = `プリセット: 開演${startTimeStr}～（開場${openTimeStr}～）を設定しました。時間設定ボタンを押してタイマーをスタートしてください。`;
+}
+
+// 初期化関数
 function initialize() {
     // 1秒ごとに現在時刻を更新
     setInterval(updateCurrentTime, 1000);
@@ -425,33 +463,8 @@ function initialize() {
             const startTimeStr = selectedOption.getAttribute('data-start');
             const openTimeStr = selectedOption.getAttribute('data-open');
             
-            // 開場時間と開演時間をセット
-            openTimeInput.value = openTimeStr;
-            startTimeInput.value = startTimeStr;
-            
-            // 終演時間を計算（開演時間 + 1.5時間）
-            const [startHours, startMinutes] = startTimeStr.split(':').map(Number);
-            let endHours = startHours;
-            let endMinutes = startMinutes + EVENT_DURATION;
-            
-            // 分が60を超える場合は時間を調整
-            if (endMinutes >= 60) {
-                endHours += Math.floor(endMinutes / 60);
-                endMinutes = endMinutes % 60;
-            }
-            
-            // 24時間を超える場合は調整
-            if (endHours >= 24) {
-                endHours = endHours % 24;
-            }
-            
-            // 終演時間をフォーマット
-            const formattedEndHours = endHours.toString().padStart(2, '0');
-            const formattedEndMinutes = endMinutes.toString().padStart(2, '0');
-            endTimeInput.value = `${formattedEndHours}:${formattedEndMinutes}`;
-            
-            // ステータス更新
-            statusElem.textContent = `プリセット: 開演${startTimeStr}～（開場${openTimeStr}～）を設定しました。時間設定ボタンを押してタイマーをスタートしてください。`;
+            // プリセットを適用
+            applyPreset(startTimeStr, openTimeStr);
             
             // 選択をリセット（次回も同じプリセットを選べるように）
             setTimeout(() => {
@@ -466,8 +479,12 @@ function initialize() {
     const savedHeader = localStorage.getItem('headerText');
 
     if (savedHeader) {
-        headerText.textContent = savedHeader;
         eventTitleInput.value = savedHeader;
+
+        // 都道府県のカッコの前に改行タグを挿入
+        const headerTextWithBreak = savedHeader.replace(/（/g, '<br>（');
+        headerText.innerHTML = headerTextWithBreak;
+        
     }
 
     // イベントタイトル入力時の処理を強化
@@ -632,23 +649,33 @@ function initialize() {
             return;
         }
 
-        // 今日の日付を使用して日時を作成
-        const today = new Date();
+        // 使用する日付を決定する
+        // 会場選択から選択した日付があればそれを使用し、なければ今日の日付を使用
+        let targetDate = new Date();
+        const selectedEventDate = document.body.dataset.selectedEventDate;
+        
+        if (selectedEventDate) {
+            // 会場選択から選択した日付を使用
+            targetDate = new Date(selectedEventDate);
+            console.log(`会場選択から日付を使用: ${selectedEventDate}`);
+        } else {
+            console.log('今日の日付を使用します');
+        }
         
         // 開場時間の設定（任意）
         let newOpenTime = null;
         if (openValue) {
             const [openHours, openMinutes] = openValue.split(':').map(Number);
-            newOpenTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+            newOpenTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(),
                 openHours, openMinutes);
         }
         
         const [startHours, startMinutes] = startValue.split(':').map(Number);
         const [endHours, endMinutes] = endValue.split(':').map(Number);
 
-        const newStartTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+        const newStartTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(),
             startHours, startMinutes);
-        const newEndTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
+        const newEndTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(),
             endHours, endMinutes);
 
         // 開場時間と開演時間の整合性チェック
@@ -678,16 +705,18 @@ function initialize() {
         // マニュアル設定として記録
         settingSource = 'manual';
         // 日付をYYYY-MM-DD形式に変換（時間部分を含まない）
-        // タイムゾーンの問題を修正するため、日本時間での日付を取得
-        const todayYear = today.getFullYear();
-        const todayMonth = (today.getMonth() + 1).toString().padStart(2, '0');
-        const todayDate = today.getDate().toString().padStart(2, '0');
+        const todayYear = targetDate.getFullYear();
+        const todayMonth = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+        const todayDate = targetDate.getDate().toString().padStart(2, '0');
         const todayStr = `${todayYear}-${todayMonth}-${todayDate}`;
         lastManualSettingDate = todayStr;
         
         // ローカルストレージに保存
         localStorage.setItem('settingSource', 'manual');
         localStorage.setItem('manualSettingDate', todayStr);
+        
+        // 会場選択後の日付情報をクリア（マニュアル設定が完了したため）
+        document.body.dataset.selectedEventDate = '';
         
         // ステータスメッセージに手動設定の情報を追加
         let statusMessage = "";
@@ -713,7 +742,7 @@ function initialize() {
         }
         
         // マニュアル設定であることを明示
-        statusElem.textContent = statusMessage + "（手動設定済み - 今日は自動読み込みしません）";
+        statusElem.textContent = statusMessage + "（手動設定済み）";
         startCountdown();
     });
 }
@@ -892,171 +921,39 @@ function autoSetTimes(eventDate, openTimeStr, startTimeStr, endTimeStr) {
     startCountdown();
 }
 
-// パスステートの読み込みと保存
-document.addEventListener('DOMContentLoaded', function() {
-    initialize();
+// 選択された会場オプションを適用する共通関数
+function applyVenueSelection(selectedOption) {
+    if (!selectedOption) return;
     
-    // マニュアル設定の処理を追加
-    handleManualSettings();
+    // 選択されたイベントの情報を取得
+    const eventDate = selectedOption.dataset.date;
+    const eventRegion = selectedOption.dataset.region;
+    const eventVenue = selectedOption.dataset.venue;
+    const eventOpenTime = selectedOption.dataset.openTime;
+    const eventStartTime = selectedOption.dataset.startTime;
+    const eventEndTime = selectedOption.dataset.endTime;
     
-    // プリセット再読み込みボタンのイベントリスナー追加
-    document.getElementById('reloadPresetBtn').addEventListener('click', function() {
-        // 再読み込みの確認
-        if (confirm('プリセットを再読み込みします。現在の設定は失われますが、よろしいですか？')) {
-            // 設定ソースをリセット
-            settingSource = 'auto';
-            lastManualSettingDate = null;
-            
-            // 保存されたローカルストレージをクリア
-            localStorage.removeItem('manualSettingDate');
-            localStorage.removeItem('settingSource');
-            
-            // イベントデータの再読み込み
-            loadEventData();
-            
-            // ステータス更新
-            statusElem.textContent = "プリセットを再読み込みしました";
-        }
-    });
+    // フォームに値を設定
+    document.getElementById('openTime').value = eventOpenTime.substring(0, 5);
+    document.getElementById('startTime').value = eventStartTime.substring(0, 5);
+    document.getElementById('endTime').value = eventEndTime.substring(0, 5);
     
-    // 会場検索機能の初期化
-    initVenueSearch();
-});
-
-// 会場データをCSVから読み込み、検索フィールドを初期化する関数
-function initVenueSearch() {
-    // コンソールログを追加して診断
-    console.log('initVenueSearch関数が呼び出されました');
+    // イベントタイトルを設定（会場名と地域名を含める）
+    const title = `${eventVenue}（${eventRegion}）`;
+    document.getElementById('eventTitle').value = title;
     
-    fetch('events.csv')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`CSVの取得に失敗しました: ${response.status}`);
-            }
-            console.log('CSVファイルの取得に成功しました');
-            return response.text();
-        })
-        .then(data => {
-            console.log('CSVデータ:', data.substring(0, 200) + '...'); // 最初の200文字を表示
-            
-            // CSVをパースする
-            const lines = data.split('\n');
-            console.log(`CSV行数: ${lines.length}`);
-            
-            // ヘッダー行をスキップして各行を処理
-            const events = [];
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line || line.startsWith('//')) {
-                    console.log(`スキップした行 ${i}: ${line.substring(0, 30)}...`);
-                    continue; // 空行やコメント行はスキップ
-                }
-                
-                const [date, region, venue, openTime, startTime, endTime] = line.split(',');
-                if (!date || !region || !venue || !openTime || !startTime || !endTime) {
-                    console.log(`必須データ不足の行 ${i}: ${line}`);
-                    continue; // 必須データがない行はスキップ
-                }
-                
-                events.push({
-                    date: date,
-                    region: region,
-                    venue: venue,
-                    openTime: openTime,
-                    startTime: startTime,
-                    endTime: endTime
-                });
-            }
-            
-            console.log(`パースしたイベント数: ${events.length}`);
-            
-            // datalistの要素を取得
-            const venueList = document.getElementById('venue-list');
-            if (!venueList) {
-                console.error('venue-listが見つかりません');
-                return;
-            }
-            
-            // 既存のオプションをクリア
-            venueList.innerHTML = '';
-            
-            // 取得したイベントデータをdatalistにオプションとして追加
-            events.forEach((event, index) => {
-                const option = document.createElement('option');
-                // 会場名（地域名）- 開催日 の形式で表示
-                option.value = `${event.venue}（${event.region}） - ${formatDateForDisplay(event.date)}`;
-                // データ属性にイベント情報を追加
-                option.dataset.date = event.date;
-                option.dataset.region = event.region;
-                option.dataset.venue = event.venue;
-                option.dataset.openTime = event.openTime;
-                option.dataset.startTime = event.startTime;
-                option.dataset.endTime = event.endTime;
-                venueList.appendChild(option);
-                
-                if (index < 3) {
-                    console.log(`追加したオプション ${index}: ${option.value}`);
-                }
-            });
-            
-            console.log(`datalistに追加したオプション数: ${venueList.options.length}`);
-            
-            // 会場検索入力フィールドのイベントリスナーを追加
-            const venueInput = document.getElementById('venue-input');
-            if (!venueInput) {
-                console.error('venue-inputが見つかりません');
-                return;
-            }
-            
-            // イベントリスナーが重複しないようにいったん削除
-            venueInput.removeEventListener('input', handleVenueSelection);
-            venueInput.addEventListener('input', handleVenueSelection);
-            console.log('会場検索入力フィールドのイベントリスナーを設定しました');
-        })
-        .catch(error => {
-            console.error('会場データの読み込みエラー:', error);
-        });
-}
-
-// 会場検索フィールドからの選択処理
-function handleVenueSelection() {
-    const venueInput = document.getElementById('venue-input');
-    const selectedValue = venueInput.value;
+    // 都道府県のカッコの前に改行タグを追加
+    const formattedTitle = title.replace(/（/g, '<br>（');
+    document.getElementById('headerText').innerHTML = formattedTitle;
+    document.title = title;
+    localStorage.setItem('headerText', title);
     
-    // datalistのオプションを全て取得
-    const options = Array.from(document.getElementById('venue-list').options);
+    // 選択した会場の日付情報をデータ属性として保存
+    document.body.dataset.selectedEventDate = eventDate;
     
-    // 選択された値と一致するオプションを検索
-    const selectedOption = options.find(option => option.value === selectedValue);
-    
-    if (selectedOption) {
-        // 選択されたイベントの情報を取得
-        const eventDate = selectedOption.dataset.date;
-        const eventRegion = selectedOption.dataset.region;
-        const eventVenue = selectedOption.dataset.venue;
-        const eventOpenTime = selectedOption.dataset.openTime;
-        const eventStartTime = selectedOption.dataset.startTime;
-        const eventEndTime = selectedOption.dataset.endTime;
-        
-        // フォームに値を設定
-        document.getElementById('openTime').value = eventOpenTime.substring(0, 5);
-        document.getElementById('startTime').value = eventStartTime.substring(0, 5);
-        document.getElementById('endTime').value = eventEndTime.substring(0, 5);
-        
-        // イベントタイトルを設定
-        const title = `${eventRegion} ${eventVenue}`;
-        document.getElementById('headerText').textContent = title;
-        document.getElementById('eventTitle').value = title;
-        document.title = title;
-        localStorage.setItem('headerText', title);
-        
-        // ステータス更新
-        const formattedDate = formatDateForDisplay(eventDate);
-        statusElem.textContent = `${formattedDate}の「${eventVenue}」の情報を設定しました。時間設定ボタンを押してタイマーをスタートしてください。`;
-        
-        // 選択後は入力フィールドをクリア（オプション）
-        // venueInput.value = '';
-    }
+    // ステータス更新
+    const formattedDate = formatDateForDisplay(eventDate);
+    statusElem.textContent = `${formattedDate}の「${eventVenue}」の情報を設定しました。時間設定ボタンを押してタイマーをスタートしてください。`;
 }
 
 // 日付を表示用にフォーマットする関数
@@ -1165,4 +1062,190 @@ function handleManualSettings() {
     
     // マニュアル設定が優先でない場合、イベントCSVを読み込む
     loadEventData();
+}
+
+// 会場データをCSVから読み込み、選択フィールドを初期化する関数
+function initVenueSearch() {
+    // コンソールログを追加して診断
+    console.log('initVenueSearch関数が呼び出されました');
+    
+    // select要素を取得
+    const venueSelect = document.getElementById('venue-select');
+    
+    if (!venueSelect) {
+        console.error('venue-select要素が見つかりません');
+        return;
+    }
+    
+    fetch('events.csv')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`CSVの取得に失敗しました: ${response.status}`);
+            }
+            console.log('CSVファイルの取得に成功しました');
+            return response.text();
+        })
+        .then(data => {
+            console.log('CSVデータ:', data.substring(0, 200) + '...'); // 最初の200文字を表示
+            
+            // CSVをパースする
+            const lines = data.split('\n');
+            console.log(`CSV行数: ${lines.length}`);
+            
+            // ヘッダー行をスキップして各行を処理
+            const events = [];
+            const incompleteEvents = []; // 必須データが不足しているイベント
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line || line.startsWith('//')) {
+                    console.log(`スキップした行 ${i}: ${line.substring(0, 30)}...`);
+                    continue; // 空行やコメント行はスキップ
+                }
+                
+                const [date, region, venue, openTime, startTime, endTime] = line.split(',');
+                
+                // 基本データ（日付、地域、会場）がない行はスキップ
+                if (!date || !region || !venue) {
+                    console.log(`基本データ不足の行 ${i}: ${line}`);
+                    continue;
+                }
+                
+                const eventData = {
+                    date: date,
+                    region: region,
+                    venue: venue,
+                    openTime: openTime || '',
+                    startTime: startTime || '',
+                    endTime: endTime || ''
+                };
+                
+                // 必須データ（開場、開演、終演時間）の有無でグループ分け
+                if (!openTime || !startTime || !endTime) {
+                    incompleteEvents.push(eventData);
+                } else {
+                    events.push(eventData);
+                }
+            }
+            
+            console.log(`完全なイベント数: ${events.length}, 不完全なイベント数: ${incompleteEvents.length}`);
+            
+            // 既存のオプションをクリア（最初のデフォルトオプションは保持）
+            const defaultOption = venueSelect.options[0];
+            venueSelect.innerHTML = '';
+            venueSelect.appendChild(defaultOption);
+            
+            // 完全なイベントデータを追加
+            events.forEach((event, index) => {
+                const option = document.createElement('option');
+                const optionText = `${event.venue}（${event.region}） - ${formatDateForDisplay(event.date)}`;
+                option.value = optionText;
+                option.textContent = optionText;
+                
+                // データ属性にイベント情報を追加
+                option.dataset.date = event.date;
+                option.dataset.region = event.region;
+                option.dataset.venue = event.venue;
+                option.dataset.openTime = event.openTime;
+                option.dataset.startTime = event.startTime;
+                option.dataset.endTime = event.endTime;
+                
+                venueSelect.appendChild(option);
+            });
+            
+            // 不完全なイベントデータを追加（選択不可として）
+            if (incompleteEvents.length > 0) {
+                // セパレーターを追加
+                const separator = document.createElement('option');
+                separator.disabled = true;
+                separator.textContent = '------- 時間未定のイベント -------';
+                venueSelect.appendChild(separator);
+                
+                // 不完全なイベントを追加
+                incompleteEvents.forEach((event) => {
+                    const option = document.createElement('option');
+                    const optionText = `${event.venue}（${event.region}） - ${formatDateForDisplay(event.date)}`;
+                    option.value = optionText;
+                    option.textContent = optionText;
+                    option.disabled = true;
+                    option.classList.add('incomplete-event');
+                    
+                    // データ属性にイベント情報を追加
+                    option.dataset.date = event.date;
+                    option.dataset.region = event.region;
+                    option.dataset.venue = event.venue;
+                    option.dataset.openTime = event.openTime;
+                    option.dataset.startTime = event.startTime;
+                    option.dataset.endTime = event.endTime;
+                    
+                    venueSelect.appendChild(option);
+                });
+            }
+            
+            // 会場選択のイベントリスナーを設定
+            venueSelect.removeEventListener('change', handleVenueSelection);
+            venueSelect.addEventListener('change', handleVenueSelection);
+            console.log('会場選択のイベントリスナーを設定しました');
+        })
+        .catch(error => {
+            console.error('会場データの読み込みエラー:', error);
+        });
+}
+
+// DOMContentLoaded イベントで初期化処理を実行
+document.addEventListener('DOMContentLoaded', function() {
+    // ページの初期化
+    initialize();
+    
+    // マニュアル設定の処理
+    handleManualSettings();
+    
+    // 会場検索機能の初期化
+    initVenueSearch();
+    
+    // プリセット再読み込みボタンの処理
+    const reloadPresetBtn = document.getElementById('reloadPresetBtn');
+    if (reloadPresetBtn) {
+        reloadPresetBtn.addEventListener('click', function() {
+            if (confirm('会場データを再読み込みしますか？')) {
+                // 会場検索の初期化を再実行
+                initVenueSearch();
+                statusElem.textContent = "会場データを再読み込みしました";
+            }
+        });
+    }
+    
+    // 拡張機能関連のエラーを抑制
+    // runtime.lastError や message channel closed のエラーを無視
+    window.addEventListener('error', function(event) {
+        // 拡張機能関連のエラーメッセージをチェック
+        if (event.message && (
+            event.message.includes('runtime.lastError') || 
+            event.message.includes('message channel closed')
+        )) {
+            // これらのエラーは無視する（ブラウザ拡張機能に関連する問題）
+            event.preventDefault();
+            return true;
+        }
+    });
+    
+    // Promiseのエラーも同様に処理
+    window.addEventListener('unhandledrejection', function(event) {
+        if (event.reason && event.reason.message && (
+            event.reason.message.includes('runtime.lastError') || 
+            event.reason.message.includes('message channel closed')
+        )) {
+            // Promiseのエラーも無視
+            event.preventDefault();
+            return true;
+        }
+    });
+});        // 会場選択処理のハンドラー
+function handleVenueSelection(event) {
+    const selectedIndex = event.target.selectedIndex;
+    if (selectedIndex === 0) return; // 最初のオプション（プレースホルダー）は無視
+    
+    const selectedOption = event.target.options[selectedIndex];
+    // 選択されたオプションの情報を適用
+    applyVenueSelection(selectedOption);
 }

@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>イベントタイムキーパー</title>
+    <title>UMEタイムキーパー</title>
+    <!-- Google Fonts 等幅フォント -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron&display=swap" rel="stylesheet">
     <!-- 共通ベースCSS -->
     <link rel="stylesheet" href="css/base.css">
     <!-- 横向き専用CSS -->
@@ -14,6 +18,34 @@
     <link rel="stylesheet" href="bulma/css/bulma.min.css">
     <!-- Font Awesome CDNを追加 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ロゴコンテナのスタイル */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px; /* 間隔を少し広げる */
+            height: 100%;
+        }
+        .logo-image {
+            max-width: 200px; /* サイズを2倍に */
+            height: auto;
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .logo-image {
+                max-width: 160px; /* サイズを2倍に */
+            }
+        }
+        
+        @media (max-height: 500px) and (orientation: landscape) {
+            .logo-image {
+                max-width: 120px; /* サイズを2倍に */
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -23,7 +55,7 @@
                 <div class="grid-container">
                     <!-- ヘッダー行 -->
                     <div class="grid-item header">
-                        <div class="editable-header" id="headerText">イベントタイムキーパー</div>
+                        <div class="editable-header" id="headerText">UMEタイムキーパー</div>
                     </div>
                     <div class="grid-item open-countdown">
                         <div class="countdown-combined" id="openCountdownCombined">
@@ -47,14 +79,24 @@
                         </div>
                     </div>
                     
-                    <!-- 空白行 + 終演カウントダウン -->
+                    <!-- 終演カウントダウン -->
                     <div class="grid-item end-countdown">
                         <div class="countdown-combined" id="endCountdownCombined">
                             <span class="time-label">終演 --:-- まで</span>
                             <span class="time-value">--:--<span class="seconds">:--</span></span>
                         </div>
                     </div>
+
+                    <div class="logos-footer">
+                        <div class="logo-container">
+                            <img src="maywadenki.png" alt="" class="logo-image">
+                            <img src="tsukuba.png" alt="" class="logo-image">
+                        </div>
+                    </div>
                 </div>
+                
+                <!-- ロゴコンテナを別の要素として時間表示の下に配置 -->
+                
             </div>
         </div>
         <button class="toggle-settings" id="toggleSettings"><i class="fas fa-cog"></i></button>
@@ -83,12 +125,12 @@
                 </div>
                 <!-- プリセットボタンエリアを追加 -->
                 <div class="setting-group">
-                    <label for="venue-input"><i class="fas fa-map-marker-alt"></i> 会場検索</label>
+                    <label for="venue-select"><i class="fas fa-map-marker-alt"></i> 会場選択</label>
                     <div class="search-container">
-                        <input type="text" id="venue-input" list="venue-list" class="venue-input" placeholder="会場名を入力または選択">
-                        <datalist id="venue-list">
+                        <select id="venue-select" class="venue-select" style="width: 100%; padding: 8px;">
+                            <option value="">-- 会場を選択 --</option>
                             <!-- CSVから動的に生成されます -->
-                        </datalist>
+                        </select>
                     </div>
                 </div>
                 <!-- プリセット時間選択を追加 -->
@@ -104,8 +146,11 @@
                 </div>
             </div>
             <div class="button-group">
-                <button id="setTimesBtn" class="custom-button"><i class="fas fa-clock"></i> 時間を設定</button>
-                <button id="reloadPresetBtn" class="custom-button"><i class="fas fa-sync-alt"></i> プリセット再読み込み</button>
+                <!-- 時間設定ボタンを削除して、自動設定の説明を追加 -->
+                <div class="auto-setting-info">
+                    <i class="fas fa-info-circle"></i> 時間入力後、自動的に設定されます
+                </div>
+                <!-- <button id="reloadPresetBtn" class="custom-button"><i class="fas fa-sync-alt"></i> プリセット再読み込み</button> -->
             </div>
             <div class="status-container">
                 <div class="status" id="status"><i class="fas fa-info-circle"></i> 時間を設定してください</div>
@@ -116,6 +161,7 @@
             </div>
         </div>
     </div>
-    <script src="scripts.js"></script>
+    <!-- JavaScriptモジュールの読み込み -->
+    <script type="module" src="core.js"></script>
 </body>
 </html>

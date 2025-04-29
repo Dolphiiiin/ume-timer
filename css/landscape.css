@@ -28,17 +28,34 @@
 /* 横向き用フォントスケール変数定義 */
 @media (orientation: landscape) {
     :root {
-        --landscape-current-time-scale: var(--current-time-scale);
+        --landscape-current-time-scale: 0.9;
         --landscape-countdown-scale: 0.6;
         --landscape-active-countdown-scale: 0.6;
         --landscape-label-scale: 0.9;
         --landscape-header-scale: var(--header-scale);
+        /* 境界線用の変数 */
+        --border-color: rgba(204, 204, 204, 0.7);
+        --border-width: 1px;
+        --border-style: solid;
     }
     
     /* 横向き時のグリッド列の独立設定 */
     .grid-container {
         /* 各列を最小0、最大1frで設定し、コンテンツに影響されないようにする */
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        /* 中央に境界線を追加 - グラデーションをシンプルな線に変更 */
+        position: relative;
+    }
+    /* 中央の境界線を疑似要素で追加 */
+    .grid-container::after {
+        content: "";
+        position: absolute;
+        top: 5%;
+        bottom: 5%;
+        left: 50%;
+        width: var(--border-width);
+        background-color: var(--border-color);
+        transform: translateX(-50%);
     }
     .grid-container > .grid-item {
         /* コンテンツの幅が列幅を超えてもレイアウトを崩さない */

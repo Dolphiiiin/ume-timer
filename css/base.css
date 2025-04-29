@@ -1,5 +1,24 @@
 @import "../styles.css";
 
+/* Google Fontsの等幅フォント設定 */
+.current-time, 
+.countdown-combined .time-value {
+    /* 等幅フォント設定 */
+    font-family: 'Share Tech Mono', 'Orbitron', monospace;
+    letter-spacing: -0.05em; /* カーニングを狭く設定 */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-feature-settings: "tnum";
+    font-feature-settings: "tnum";
+    white-space: pre;
+}
+
+/* 秒の表示も等幅に統一 */
+.seconds {
+    font-family: 'Share Tech Mono', 'Orbitron', monospace;
+    letter-spacing: -0.05em; /* カーニングを狭く設定 */
+    font-variant-numeric: tabular-nums;
+}
+
 /* ポップアップ設定パネルのスタイル - 右寄せレイアウト */
 .settings-panel {
     position: fixed;
@@ -253,4 +272,18 @@
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
+}
+
+/* 時間未定イベントのスタイル */
+.venue-select option:disabled {
+    color: var(--text-color);
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.venue-select option.incomplete-event {
+    background-color: rgba(204, 204, 204, 0.1);
+    color: var(--text-color);
+    opacity: 0.6;
+    font-style: italic;
 }
